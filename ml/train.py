@@ -138,6 +138,14 @@ def train(data_path: Path = DATA_FILE, output: Path = MODEL_FILE) -> dict:
         "all_model_metrics": results,
     }
 
+    # Training uses every core, but the served artifact predicts on one row at a
+    # time inside a request thread, where fanning out across cores buys nothing
+    # and makes scikit-learn warn on every call because the worker threads do
+    # not inherit the caller's configuration. Persist it single-threaded.
+    estimator = best_pipeline.named_steps["model"]
+    if hasattr(estimator, "n_jobs"):
+        estimator.n_jobs = 1
+
     output.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump({"pipeline": best_pipeline, "metadata": metadata}, output)
     logger.info("Saved model to %s", output)

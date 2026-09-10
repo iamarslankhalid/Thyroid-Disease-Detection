@@ -110,6 +110,105 @@ class TestPrediction:
         assert body["confidence"] == pytest.approx(body["probabilities"][highest])
 
 
+class TestUnits:
+    """A lab report in ug/dL must reach the model as nmol/L.
+
+    This is the failure the unit selector exists to prevent: most laboratories
+    outside Europe print total T4 in ug/dL, and a normal 8.1 ug/dL typed into a
+    field measured in nmol/L would be scored against a 60-140 range and read as
+    severe hypothyroidism.
+    """
+
+    def test_same_patient_in_either_unit_gets_the_same_result(self, client) -> None:
+        in_nmol = {"age": 40, "sex": "female", "TSH": 2.0, "TT4": 104.2, "T3": 1.84}
+        in_us = {
+            "age": 40,
+            "sex": "female",
+            "TSH": 2.0,
+            "TT4": 8.1,
+            "T3": 120.0,
+            "units": {"TT4": "ug/dL", "T3": "ng/dL"},
+        }
+        first = client.post("/api/predict", json=in_nmol).json()
+        second = client.post("/api/predict", json=in_us).json()
+        assert first["prediction"] == second["prediction"]
+        assert first["confidence"] == pytest.approx(second["confidence"], abs=0.02)
+
+    def test_a_normal_us_style_panel_is_not_called_hypothyroid(self, client) -> None:
+        body = client.post(
+            "/api/predict",
+            json={
+                "age": 40,
+                "sex": "female",
+                "TSH": 2.0,
+                "TT4": 8.1,
+                "T3": 120.0,
+                "units": {"TT4": "ug/dL", "T3": "ng/dL"},
+            },
+        ).json()
+        assert body["prediction"] == "Negative"
+        flags = {item["feature"]: item for item in body["lab_flags"]}
+        assert flags["TT4"]["status"] == "normal"
+
+    def test_results_are_reported_back_in_the_unit_supplied(self, client) -> None:
+        body = client.post(
+            "/api/predict",
+            json={"age": 40, "TSH": 2.0, "TT4": 8.1, "units": {"TT4": "ug/dL"}},
+        ).json()
+        flag = next(item for item in body["lab_flags"] if item["feature"] == "TT4")
+        assert flag["unit"] == "µg/dL"
+        assert flag["value"] == pytest.approx(8.1, abs=0.05)
+        assert (flag["reference_low"], flag["reference_high"]) == (4.7, 10.9)
+
+    def test_bounds_are_checked_after_conversion(self, client) -> None:
+        """900 ug/dL is 11,583 nmol/L - impossible, and rejected as such."""
+        response = client.post(
+            "/api/predict",
+            json={"age": 40, "TT4": 900, "units": {"TT4": "ug/dL"}},
+        )
+        assert response.status_code == 422
+        assert "µg/dL" in response.text
+
+    def test_unknown_unit_is_rejected(self, client) -> None:
+        response = client.post(
+            "/api/predict",
+            json={"age": 40, "TSH": 2.0, "units": {"TSH": "pmol/L"}},
+        )
+        assert response.status_code == 422
+
+    def test_reference_data_lists_units_with_converted_ranges(self, client) -> None:
+        features = client.get("/api/reference-data").json()["features"]
+        by_code = {unit["code"]: unit for unit in features["TT4"]["units"]}
+        assert by_code["nmol/L"]["reference"] == [60, 140]
+        assert by_code["ug/dL"]["reference"] == [4.7, 10.9]
+        assert by_code["ug/dL"]["label"] == "µg/dL"
+
+
+class TestCounterfactuals:
+    def test_a_result_says_what_would_change_it(self, client) -> None:
+        body = client.post("/api/predict", json=HYPOTHYROID_PATIENT).json()
+        assert body["counterfactuals"], "a screening should say what would change it"
+        item = body["counterfactuals"][0]
+        assert item["resulting_class"] != body["prediction"]
+        assert item["direction"] in {"above", "below"}
+
+    def test_thresholds_are_expressed_in_the_patients_own_unit(self, client) -> None:
+        body = client.post(
+            "/api/predict",
+            json={
+                "age": 63,
+                "sex": "female",
+                "TSH": 68.0,
+                "TT4": 3.7,
+                "units": {"TT4": "ug/dL"},
+            },
+        ).json()
+        for item in body["counterfactuals"]:
+            if item["feature"] == "TT4":
+                assert item["unit"] == "µg/dL"
+                assert item["current_value"] == pytest.approx(3.7, abs=0.05)
+
+
 class TestRouting:
     """The SPA catch-all must not answer for the API.
 

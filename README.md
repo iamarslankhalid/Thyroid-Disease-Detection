@@ -13,19 +13,24 @@ well the model actually performs.
 
 ## What it does
 
-A patient enters whatever their lab report shows — even a single TSH value — and gets back:
+A patient enters whatever their lab report shows — even a single TSH value, in whatever
+unit their laboratory printed — and gets back:
 
 - **A screening result** (Negative / Hypothyroid / Hyperthyroid) with the model's confidence
 - **Why it said that**: the specific values that drove the result, measured per patient rather than pulled from a global feature-importance chart
-- **Their numbers against reference ranges**, so nothing rests on the model's word alone
+- **What would change it**: *"if your TSH were below 4.46 mU/L, this would read Negative"* — a real boundary found by re-running the model across the whole plausible range, not an estimate
+- **Their numbers against reference ranges**, in their own units, so nothing rests on the model's word alone
+- **What to do next**, and a comparison against their previous check
 - **A printable report** and a **local history** with a TSH trend over time
 - **A transparency page** showing the confusion matrix, per-class recall and known limits
 
 ![The result of a screening: a plain-language verdict, model confidence across the three outcomes, the values that drove it, and each lab value against its reference range](docs/images/screenshot-result.png)
 
-| Screening form | Model transparency | History, in dark mode |
+| Screening form | What would change the result | Model transparency |
 |---|---|---|
-| ![The screening form, with lab fields labelled by unit and typical range](docs/images/screenshot-form.png) | ![The model page, showing balanced accuracy, macro F1, missed-disease rate and per-class scores](docs/images/screenshot-model.png) | ![Saved assessments with a TSH trend line drawn against the normal range](docs/images/screenshot-history-dark.png) |
+| ![The screening form, with a unit selector beside each lab field](docs/images/screenshot-form.png) | ![Counterfactual thresholds and next steps beneath the result](docs/images/screenshot-explain.png) | ![The model page, showing recall by class and a confusion-matrix heatmap](docs/images/screenshot-model.png) |
+
+![Saved assessments with a TSH trend line drawn against the normal range, in dark mode](docs/images/screenshot-history-dark.png)
 
 ---
 
@@ -118,11 +123,26 @@ feature order, class names, metrics and scikit-learn version, and the API reads
 units and reference ranges from the same `ml/config.py` the model was trained
 from — the UI never hard-codes a clinical value.
 
+### Units are a correctness problem, not a convenience
+
+The training data records thyroid hormones in **nmol/L**. Most laboratories in
+Pakistan, the United States and much of Asia print total T4 in **µg/dL** and
+total T3 in **ng/dL**. A perfectly normal 8.1 µg/dL typed into a field measured
+in nmol/L would be scored against a 60–140 range and read as severe
+hypothyroidism — a confidently wrong answer given to a healthy person.
+
+So every value carries a unit. `ml/units.py` converts to the training unit
+before the model sees anything, bounds are validated *after* conversion (and
+reported back in the unit you typed), and reference ranges are converted for
+display. Only exact conversions are offered: thyroid uptake is sometimes
+reported as a percentage, but turning that into this dataset's ratio needs the
+reporting lab's own normal mean, so the app says so instead of guessing.
+
 ```text
 ml/            data cleaning, pipeline, training, evaluation, explanation
 backend/app/   FastAPI: schemas, model service, routes; serves the built UI
 frontend/src/  React app: pages, components, typed API client
-tests/         53 tests over cleaning, imputation, validation and the API
+tests/         78 tests over cleaning, imputation, unit conversion and the API
 models/        trained artifact + generated model card
 reports/       metrics.json and the dataset report from the last run
 notebooks/     the original exploratory notebook, kept as history

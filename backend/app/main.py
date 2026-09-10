@@ -22,6 +22,7 @@ from backend.app.schemas import (
     PredictionResponse,
 )
 from ml.config import BINARY_LABELS, FEATURE_META
+from ml.units import round_for_display, round_range, units_for
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-7s %(message)s")
 logger = logging.getLogger(__name__)
@@ -73,7 +74,12 @@ def health() -> HealthResponse:
 
 @app.get("/api/reference-data", tags=["metadata"])
 def reference_data() -> dict:
-    """Units, valid ranges and labels, so the UI never hard-codes clinical values."""
+    """Units, valid ranges and labels, so the UI never hard-codes clinical values.
+
+    ``units`` lists every unit a field accepts, with the reference range already
+    converted into each one - the form can then show "0.6-1.1 µg/dL" or
+    "8-14 nmol/L" without knowing any chemistry.
+    """
     return {
         "features": {
             name: {
@@ -83,6 +89,26 @@ def reference_data() -> dict:
                 "max": meta["bounds"][1],
                 "reference": meta["reference"],
                 "description": meta["description"],
+                "units": [
+                    {
+                        "code": unit.code,
+                        "label": unit.label,
+                        "note": unit.note,
+                        "min": round_for_display(meta["bounds"][0] / unit.to_canonical),
+                        "max": round_for_display(meta["bounds"][1] / unit.to_canonical),
+                        "reference": (
+                            list(
+                                round_range(
+                                    meta["reference"][0] / unit.to_canonical,
+                                    meta["reference"][1] / unit.to_canonical,
+                                )
+                            )
+                            if meta["reference"]
+                            else None
+                        ),
+                    }
+                    for unit in units_for(name)
+                ],
             }
             for name, meta in FEATURE_META.items()
         },
@@ -119,7 +145,7 @@ def model_info() -> ModelInfoResponse:
 def predict(patient: PatientInput) -> PredictionResponse:
     """Screen one patient and explain the result."""
     try:
-        result = model_service.predict(patient.model_dump())
+        result = model_service.predict(patient.canonical_payload(), patient.units)
     except ModelNotLoadedError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     return PredictionResponse(**result)

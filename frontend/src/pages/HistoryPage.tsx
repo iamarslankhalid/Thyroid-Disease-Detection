@@ -5,9 +5,21 @@ import { CLASS_META, formatDateTime, formatPercent } from "../lib/classes";
 import {
   clearHistory,
   deleteAssessment,
+  exportHistory,
   loadHistory,
   type StoredAssessment,
 } from "../lib/storage";
+
+/** Hands the browser a JSON copy of everything stored locally. */
+function downloadHistory() {
+  const blob = new Blob([exportHistory()], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `thyroid-assessments-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function HistoryPage() {
   const [entries, setEntries] = useState<StoredAssessment[]>(() => loadHistory());
@@ -22,14 +34,23 @@ export function HistoryPage() {
       .catch(() => setTshMeta(null));
   }, []);
 
-  // Oldest first, and only assessments that actually carried a TSH value.
+  // Oldest first, and only assessments that carried a TSH value recorded in the
+  // same unit as the most recent one - two units on one axis is not a trend.
+  const latestTshUnit = entries
+    .flatMap((entry) => entry.labs.filter((lab) => lab.feature === "TSH"))
+    .at(0)?.unit;
+
   const tshPoints = useMemo<TrendPoint[]>(
     () =>
       [...entries]
         .reverse()
-        .filter((entry) => typeof entry.input.TSH === "number")
-        .map((entry) => ({ date: entry.createdAt, value: entry.input.TSH as number })),
-    [entries],
+        .flatMap((entry) => {
+          const lab = entry.labs.find(
+            (item) => item.feature === "TSH" && item.unit === latestTshUnit,
+          );
+          return lab ? [{ date: entry.createdAt, value: lab.value }] : [];
+        }),
+    [entries, latestTshUnit],
   );
 
   if (entries.length === 0) {
@@ -54,15 +75,23 @@ export function HistoryPage() {
             in this browser. Clearing your browser data or switching device removes them.
           </p>
         </div>
-        <button
-          onClick={() => {
-            clearHistory();
-            setEntries([]);
-          }}
-          className="rounded-lg border border-line px-3 py-2 text-sm text-ink-2 hover:border-line-strong"
-        >
-          Clear all
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={downloadHistory}
+            className="rounded-lg border border-line px-3 py-2 text-sm text-ink-2 hover:border-line-strong"
+          >
+            Download
+          </button>
+          <button
+            onClick={() => {
+              clearHistory();
+              setEntries([]);
+            }}
+            className="rounded-lg border border-line px-3 py-2 text-sm text-ink-2 hover:border-line-strong"
+          >
+            Clear all
+          </button>
+        </div>
       </header>
 
       {tshPoints.length >= 2 && tshMeta?.reference && (
@@ -70,7 +99,7 @@ export function HistoryPage() {
           <TrendChart
             points={tshPoints}
             label={tshMeta.label}
-            unit={tshMeta.unit}
+            unit={latestTshUnit ?? tshMeta.unit}
             referenceLow={tshMeta.reference[0]}
             referenceHigh={tshMeta.reference[1]}
           />
@@ -104,7 +133,10 @@ export function HistoryPage() {
                   {formatPercent(entry.confidence)}
                 </td>
                 <td className="tabular px-4 py-3 text-ink-2">
-                  {typeof entry.input.TSH === "number" ? entry.input.TSH : "—"}
+                  {(() => {
+                    const lab = entry.labs.find((item) => item.feature === "TSH");
+                    return lab ? `${lab.value} ${lab.unit}` : "—";
+                  })()}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button

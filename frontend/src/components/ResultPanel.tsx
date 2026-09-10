@@ -1,17 +1,22 @@
 import type { PredictionResponse } from "../api";
-import { CLASS_META, TONE_COLOR, formatPercent, formatDateTime } from "../lib/classes";
+import { CLASS_META, NEXT_STEPS, TONE_COLOR, formatPercent, formatDateTime } from "../lib/classes";
+import type { StoredAssessment } from "../lib/storage";
+import { ComparisonCard } from "./ComparisonCard";
 import { ContributionList } from "./ContributionList";
 import { LabFlags } from "./LabFlags";
 import { ProbabilityBars } from "./ProbabilityBars";
+import { WhatWouldChange } from "./WhatWouldChange";
 
 const TONE_SYMBOL = { good: "✓", warning: "!", serious: "!" } as const;
 
 /** The screening outcome, its reasoning and the caveats that belong with it. */
 export function ResultPanel({
   result,
+  previous,
   onReset,
 }: {
   result: PredictionResponse;
+  previous: StoredAssessment | null;
   onReset: () => void;
 }) {
   const meta = CLASS_META[result.prediction];
@@ -92,6 +97,30 @@ export function ResultPanel({
 
       <section className="rounded-2xl border border-line bg-surface-1 p-6 shadow-sm">
         <LabFlags flags={result.lab_flags} />
+      </section>
+
+      {result.counterfactuals.length > 0 && (
+        <section className="rounded-2xl border border-line bg-surface-1 p-6 shadow-sm">
+          <WhatWouldChange items={result.counterfactuals} />
+        </section>
+      )}
+
+      {previous && (
+        <section className="rounded-2xl border border-line bg-surface-1 p-6 shadow-sm">
+          <ComparisonCard result={result} previous={previous} />
+        </section>
+      )}
+
+      <section className="print-block rounded-2xl border border-line bg-surface-1 p-6 shadow-sm">
+        <h3 className="text-sm font-semibold text-ink-1">What to do next</h3>
+        <ul className="mt-3 space-y-2.5">
+          {NEXT_STEPS[result.prediction].map((step) => (
+            <li key={step} className="flex gap-3 text-sm leading-relaxed text-ink-2">
+              <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+              {step}
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section

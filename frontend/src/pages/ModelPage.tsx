@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, type ModelInfo } from "../api";
+import { ConfusionHeatmap, RecallChart } from "../components/ModelCharts";
 import { formatDateTime, formatPercent } from "../lib/classes";
 
 /** scikit-learn scorer names read badly in a sentence ("f1 macro"). */
@@ -96,8 +97,17 @@ export function ModelPage() {
         </div>
       </section>
 
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="min-w-0 rounded-2xl border border-line bg-surface-1 p-6">
+          <RecallChart metrics={test} />
+        </div>
+        <div className="min-w-0 rounded-2xl border border-line bg-surface-1 p-6">
+          <ConfusionHeatmap metrics={test} />
+        </div>
+      </section>
+
       <section>
-        <h2 className="text-lg font-semibold text-ink-1">Per class</h2>
+        <h2 className="text-lg font-semibold text-ink-1">Per class, in numbers</h2>
         <p className="mt-1 text-sm text-ink-2">
           Recall is the share of real cases found. Precision is how often a flag is correct.
         </p>
@@ -120,61 +130,6 @@ export function ModelPage() {
                   <td className="px-4 py-3 text-ink-2">{scores.recall.toFixed(3)}</td>
                   <td className="px-4 py-3 text-ink-2">{scores.f1.toFixed(3)}</td>
                   <td className="px-4 py-3 text-ink-2">{scores.support}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold text-ink-1">Where it gets things wrong</h2>
-        <p className="mt-1 text-sm text-ink-2">
-          Rows are the true diagnosis, columns what the model predicted. Everything off the
-          diagonal is a mistake.
-        </p>
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface-1">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line text-xs tracking-wide text-ink-3 uppercase">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-medium">True \ predicted</th>
-                {test.confusion_matrix_labels.map((label) => (
-                  <th scope="col" key={label} className="px-4 py-3 font-medium">
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="tabular">
-              {test.confusion_matrix.map((row, rowIndex) => (
-                <tr
-                  key={test.confusion_matrix_labels[rowIndex]}
-                  className="border-b border-line last:border-0"
-                >
-                  <th scope="row" className="px-4 py-3 text-left font-medium text-ink-1">
-                    {test.confusion_matrix_labels[rowIndex]}
-                  </th>
-                  {row.map((count, columnIndex) => (
-                    <td
-                      key={columnIndex}
-                      className={`px-4 py-3 ${
-                        rowIndex === columnIndex
-                          ? "font-semibold text-ink-1"
-                          : count > 0
-                            ? "text-ink-1"
-                            : "text-ink-3"
-                      }`}
-                      style={
-                        rowIndex === columnIndex
-                          ? undefined
-                          : count > 0
-                            ? { backgroundColor: "var(--surface-2)" }
-                            : undefined
-                      }
-                    >
-                      {count}
-                    </td>
-                  ))}
                 </tr>
               ))}
             </tbody>

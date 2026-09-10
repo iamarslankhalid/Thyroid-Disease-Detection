@@ -11,13 +11,17 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 from ml.config import FEATURE_META
+from ml.units import UnknownUnitError, resolve, round_for_display, to_canonical
 
 _LAB_FIELDS = ("TSH", "T3", "TT4", "T4U", "FTI")
+_MEASURED_FIELDS = ("age", *_LAB_FIELDS)
 
-
-def _bounds(feature: str) -> tuple[float, float]:
-    low, high = FEATURE_META[feature]["bounds"]
-    return float(low), float(high)
+# Field-level limits are deliberately loose. The real bounds are clinical and
+# live in FEATURE_META in the training unit, but a value arriving in ug/dL is a
+# different number entirely - a T3 of 120 ng/dL is normal, while 120 nmol/L is
+# impossible. Bounds are therefore checked after conversion, where they mean
+# something, and reported back in the unit the patient actually typed.
+_ABSOLUTE_MAX = 1e6
 
 
 class PatientInput(BaseModel):
@@ -25,8 +29,8 @@ class PatientInput(BaseModel):
 
     age: float = Field(
         ...,
-        ge=_bounds("age")[0],
-        le=_bounds("age")[1],
+        gt=0,
+        le=_ABSOLUTE_MAX,
         description="Patient age in years.",
         examples=[45],
     )
@@ -35,24 +39,34 @@ class PatientInput(BaseModel):
     )
 
     TSH: float | None = Field(
-        default=None, ge=_bounds("TSH")[0], le=_bounds("TSH")[1],
-        description="Thyroid-stimulating hormone (mU/L).", examples=[2.1],
+        default=None, gt=0, le=_ABSOLUTE_MAX,
+        description="Thyroid-stimulating hormone.", examples=[2.1],
     )
     T3: float | None = Field(
-        default=None, ge=_bounds("T3")[0], le=_bounds("T3")[1],
-        description="Total triiodothyronine (nmol/L).", examples=[1.9],
+        default=None, gt=0, le=_ABSOLUTE_MAX,
+        description="Total triiodothyronine.", examples=[1.9],
     )
     TT4: float | None = Field(
-        default=None, ge=_bounds("TT4")[0], le=_bounds("TT4")[1],
-        description="Total thyroxine (nmol/L).", examples=[105],
+        default=None, gt=0, le=_ABSOLUTE_MAX,
+        description="Total thyroxine.", examples=[105],
     )
     T4U: float | None = Field(
-        default=None, ge=_bounds("T4U")[0], le=_bounds("T4U")[1],
+        default=None, gt=0, le=_ABSOLUTE_MAX,
         description="Thyroxine uptake ratio.", examples=[0.98],
     )
     FTI: float | None = Field(
-        default=None, ge=_bounds("FTI")[0], le=_bounds("FTI")[1],
+        default=None, gt=0, le=_ABSOLUTE_MAX,
         description="Free thyroxine index.", examples=[110],
+    )
+
+    units: dict[str, str] = Field(
+        default_factory=dict,
+        description=(
+            "Unit each value was written in, keyed by field name, e.g. "
+            '{"TT4": "ug/dL"}. Anything omitted is assumed to be in the '
+            "canonical unit from /api/reference-data."
+        ),
+        examples=[{"TT4": "ug/dL", "T3": "ng/dL"}],
     )
 
     on_thyroxine: bool = False
@@ -85,10 +99,53 @@ class PatientInput(BaseModel):
         return self
 
     @model_validator(mode="after")
+    def units_must_be_known(self) -> PatientInput:
+        for field, code in self.units.items():
+            if field not in _MEASURED_FIELDS:
+                raise ValueError(
+                    f"'{field}' is not a measured field, so it takes no unit. "
+                    f"Valid fields: {', '.join(_MEASURED_FIELDS)}."
+                )
+            try:
+                resolve(field, code)
+            except UnknownUnitError as error:
+                raise ValueError(str(error)) from error
+        return self
+
+    @model_validator(mode="after")
+    def values_must_be_clinically_possible(self) -> PatientInput:
+        """Check the real bounds once every value is in the training unit."""
+        for field in _MEASURED_FIELDS:
+            value = getattr(self, field)
+            if value is None:
+                continue
+            code = self.units.get(field)
+            canonical = to_canonical(field, value, code)
+            low, high = FEATURE_META[field]["bounds"]
+            if not low <= canonical <= high:
+                unit = resolve(field, code)
+                shown_low = round_for_display(low / unit.to_canonical)
+                shown_high = round_for_display(high / unit.to_canonical)
+                raise ValueError(
+                    f"{field} of {value} {unit.label} is outside the plausible "
+                    f"range ({shown_low}-{shown_high} {unit.label})."
+                )
+        return self
+
+    @model_validator(mode="after")
     def pregnancy_requires_female(self) -> PatientInput:
         if self.pregnant and self.sex == "male":
             raise ValueError("'pregnant' cannot be set for a male patient.")
         return self
+
+    def canonical_payload(self) -> dict:
+        """The request with every measurement converted to the training unit."""
+        payload = self.model_dump(exclude={"units"})
+        for field in _MEASURED_FIELDS:
+            value = payload.get(field)
+            if value is not None:
+                payload[field] = to_canonical(field, value, self.units.get(field))
+        return payload
 
 
 class ContributionOut(BaseModel):
@@ -104,7 +161,11 @@ class ContributionOut(BaseModel):
 
 
 class LabFlag(BaseModel):
-    """A single lab value placed against its reference range."""
+    """A single lab value placed against its reference range.
+
+    Reported in the unit the patient supplied, not the training unit: a report
+    that says 8.1 ug/dL should be answered in ug/dL.
+    """
 
     feature: str
     label: str
@@ -115,12 +176,25 @@ class LabFlag(BaseModel):
     reference_high: float
 
 
+class Counterfactual(BaseModel):
+    """The nearest change to one value that would alter the result."""
+
+    feature: str
+    label: str
+    unit: str
+    current_value: float
+    threshold: float
+    direction: Literal["above", "below"]
+    resulting_class: Literal["Negative", "Hypothyroid", "Hyperthyroid"]
+
+
 class PredictionResponse(BaseModel):
     prediction: Literal["Negative", "Hypothyroid", "Hyperthyroid"]
     confidence: float = Field(description="Model probability for the predicted class, 0-1.")
     probabilities: dict[str, float]
     contributions: list[ContributionOut]
     lab_flags: list[LabFlag]
+    counterfactuals: list[Counterfactual]
     inputs_provided: int
     inputs_total: int
     model_name: str

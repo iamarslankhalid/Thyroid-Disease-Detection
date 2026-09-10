@@ -11,7 +11,19 @@ export interface PatientInput {
   TT4?: number | null;
   T4U?: number | null;
   FTI?: number | null;
-  [flag: string]: number | string | boolean | null | undefined;
+  /** Unit each value was written in, e.g. {TT4: "ug/dL"}. */
+  units?: Record<string, string>;
+  [flag: string]: number | string | boolean | null | undefined | Record<string, string>;
+}
+
+export interface Counterfactual {
+  feature: string;
+  label: string;
+  unit: string;
+  current_value: number;
+  threshold: number;
+  direction: "above" | "below";
+  resulting_class: ClassName;
 }
 
 export interface Contribution {
@@ -40,11 +52,21 @@ export interface PredictionResponse {
   probabilities: Record<ClassName, number>;
   contributions: Contribution[];
   lab_flags: LabFlag[];
+  counterfactuals: Counterfactual[];
   inputs_provided: number;
   inputs_total: number;
   model_name: string;
   model_trained_at: string;
   disclaimer: string;
+}
+
+export interface UnitOption {
+  code: string;
+  label: string;
+  note: string | null;
+  min: number;
+  max: number;
+  reference: [number, number] | null;
 }
 
 export interface FeatureMeta {
@@ -54,6 +76,7 @@ export interface FeatureMeta {
   max: number;
   reference: [number, number] | null;
   description: string;
+  units: UnitOption[];
 }
 
 export interface ReferenceData {

@@ -6,7 +6,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ml.config import BINARY_FEATURES, CLASS_NAMES, FEATURE_ORDER, NUMERIC_FEATURES
+from ml import units
+from ml.config import (
+    BINARY_FEATURES,
+    CLASS_NAMES,
+    FEATURE_META,
+    FEATURE_ORDER,
+    NUMERIC_FEATURES,
+)
+from ml.counterfactual import find_counterfactuals
 from ml.data import build_dataset, map_target
 from ml.explain import classify_value, explain_prediction
 from ml.pipeline import build_candidates
@@ -121,3 +129,97 @@ class TestExplain:
             pipeline, row, metadata, predicted_index=1, provided_features={"age", "TSH"}
         )
         assert {item.feature for item in contributions} <= {"age", "TSH"}
+
+
+class TestUnits:
+    """Conversions are the difference between a screening and a wrong answer."""
+
+    def test_canonical_units_are_unchanged(self) -> None:
+        assert units.to_canonical("TT4", 105.0) == pytest.approx(105.0)
+        assert units.to_canonical("T3", 1.9, "nmol/L") == pytest.approx(1.9)
+
+    def test_total_t4_converts_from_micrograms_per_decilitre(self) -> None:
+        """8.1 ug/dL is a normal T4; read as nmol/L it looks severely low."""
+        canonical = units.to_canonical("TT4", 8.1, "ug/dL")
+        assert canonical == pytest.approx(104.2, abs=0.5)
+        low, high = FEATURE_META["TT4"]["reference"]
+        assert low < canonical < high
+
+    def test_total_t3_converts_from_nanograms_per_decilitre(self) -> None:
+        canonical = units.to_canonical("T3", 120.0, "ng/dL")
+        assert canonical == pytest.approx(1.84, abs=0.05)
+
+    def test_microinternational_units_equal_milliunits(self) -> None:
+        """The same quantity under two names; patients should not need to know."""
+        assert units.to_canonical("TSH", 4.2, "uIU/mL") == pytest.approx(4.2)
+
+    def test_conversion_round_trips(self) -> None:
+        for feature, value, code in [("TT4", 96.0, "ug/dL"), ("T3", 2.2, "ng/dL")]:
+            canonical = units.to_canonical(feature, value, code)
+            assert units.from_canonical(feature, canonical, code) == pytest.approx(value)
+
+    def test_reference_range_converts(self) -> None:
+        low, high = units.convert_range("TT4", 60.0, 140.0, "ug/dL")
+        assert (round(low, 1), round(high, 1)) == (4.7, 10.9)
+
+    def test_unknown_unit_is_rejected(self) -> None:
+        with pytest.raises(units.UnknownUnitError):
+            units.to_canonical("TT4", 100.0, "pmol/L")
+
+    def test_uptake_offers_no_conversion(self) -> None:
+        """Turning a T-uptake percentage into this ratio needs the lab's own
+        normal mean, so no conversion is offered rather than a wrong one."""
+        assert [unit.code for unit in units.units_for("T4U")] == ["ratio"]
+
+
+class TestCounterfactuals:
+    @pytest.fixture(scope="class")
+    def trained(self):
+        X, y, _ = build_dataset()
+        pipeline = build_candidates()["random_forest"]
+        return pipeline.fit(X, y)
+
+    def _row(self, **values) -> pd.DataFrame:
+        row = pd.DataFrame([{name: np.nan for name in FEATURE_ORDER}])
+        for name, value in values.items():
+            row.loc[0, name] = value
+        return row
+
+    def test_finds_a_threshold_that_flips_a_hypothyroid_result(self, trained) -> None:
+        row = self._row(age=58, sex_is_male=0, TSH=40.0, T3=1.0, TT4=50.0, T4U=1.0, FTI=48.0)
+        metadata = {"class_names": CLASS_NAMES}
+        predicted = int(np.argmax(trained.predict_proba(row)[0]))
+
+        results = find_counterfactuals(
+            trained, row, metadata, predicted, provided_features=set(FEATURE_ORDER)
+        )
+        assert results, "a borderline-able case should have some reachable boundary"
+        for item in results:
+            assert item.resulting_class != CLASS_NAMES[predicted]
+            assert item.direction in {"above", "below"}
+            if item.direction == "below":
+                assert item.threshold < item.current_value
+            else:
+                assert item.threshold > item.current_value
+
+    def test_only_suggests_changes_to_values_that_were_given(self, trained) -> None:
+        """Proposing a threshold for a test the patient never took is nonsense."""
+        row = self._row(age=58, TSH=40.0)
+        results = find_counterfactuals(
+            trained, row, {"class_names": CLASS_NAMES}, 1, provided_features={"age", "TSH"}
+        )
+        assert {item.feature for item in results} <= {"TSH"}
+
+    def test_crossing_the_threshold_really_changes_the_prediction(self, trained) -> None:
+        """The reported boundary must hold when the model is asked again."""
+        row = self._row(age=58, sex_is_male=0, TSH=40.0, T3=1.0, TT4=50.0, T4U=1.0, FTI=48.0)
+        metadata = {"class_names": CLASS_NAMES}
+        predicted = int(np.argmax(trained.predict_proba(row)[0]))
+        results = find_counterfactuals(
+            trained, row, metadata, predicted, provided_features=set(FEATURE_ORDER)
+        )
+
+        for item in results:
+            moved = row.copy()
+            moved.loc[0, item.feature] = item.threshold
+            assert CLASS_NAMES[int(trained.predict(moved)[0])] == item.resulting_class

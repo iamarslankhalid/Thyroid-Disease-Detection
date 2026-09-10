@@ -13,13 +13,38 @@ import { CLASS_ORDER } from "./classes";
 const STORAGE_KEY = "thyroid-assessments-v1";
 const MAX_ENTRIES = 50;
 
+/** One lab value exactly as it was shown, unit included. */
+export interface StoredLab {
+  feature: string;
+  label: string;
+  value: number;
+  unit: string;
+}
+
 export interface StoredAssessment {
   id: string;
   createdAt: string;
   prediction: ClassName;
   confidence: number;
   probabilities: Record<ClassName, number>;
+  /** The raw request, kept for reference. */
   input: PatientInput;
+  /**
+   * The values as displayed, with their units. Comparing across assessments
+   * uses these rather than the raw request: someone who entered 8.1 µg/dL in
+   * March and 104 nmol/L in June has not seen their T4 rise thirteenfold.
+   */
+  labs: StoredLab[];
+}
+
+function isLab(value: unknown): value is StoredLab {
+  const candidate = value as StoredLab;
+  return (
+    typeof candidate?.feature === "string" &&
+    typeof candidate?.unit === "string" &&
+    typeof candidate?.value === "number" &&
+    Number.isFinite(candidate.value)
+  );
 }
 
 function isAssessment(value: unknown): value is StoredAssessment {
@@ -44,7 +69,11 @@ export function loadHistory(): StoredAssessment[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isAssessment);
+    return parsed.filter(isAssessment).map((entry) => ({
+      ...entry,
+      // Entries saved before units existed simply have no comparable labs.
+      labs: Array.isArray(entry.labs) ? entry.labs.filter(isLab) : [],
+    }));
   } catch {
     // Private browsing, cleared storage or corrupt JSON: an empty history is
     // the correct answer, never a crash on load.
@@ -71,6 +100,12 @@ export function saveAssessment(
     confidence: result.confidence,
     probabilities: result.probabilities,
     input,
+    labs: result.lab_flags.map((flag) => ({
+      feature: flag.feature,
+      label: flag.label,
+      value: flag.value,
+      unit: flag.unit,
+    })),
   };
   persist([entry, ...loadHistory()].slice(0, MAX_ENTRIES));
   return entry;
@@ -84,4 +119,13 @@ export function deleteAssessment(id: string): StoredAssessment[] {
 
 export function clearHistory(): void {
   persist([]);
+}
+
+/** Everything the browser holds, for the "download my data" button. */
+export function exportHistory(): string {
+  return JSON.stringify(
+    { exportedAt: new Date().toISOString(), assessments: loadHistory() },
+    null,
+    2,
+  );
 }
