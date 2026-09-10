@@ -1,0 +1,10 @@
+# Runtime dependencies. Versions are pinned so a saved model always loads with
+# the scikit-learn that produced it.
+scikit-learn==1.9.0
+pandas==3.0.5
+numpy==2.5.3
+scipy==1.18.1
+joblib==1.6.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.5

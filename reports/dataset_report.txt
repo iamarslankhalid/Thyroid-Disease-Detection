@@ -1,0 +1,17 @@
+Raw rows:                    9,172
+Rows kept after target map:  7,679
+Dropped (other diagnoses):   1,493
+Implausible ages set to NaN: 4
+Male 'pregnant' flags fixed: 0
+Class balance:
+  Negative       6,771 (88.18%)
+  Hypothyroid      667 ( 8.69%)
+  Hyperthyroid     241 ( 3.14%)
+Missing values per feature (left for the pipeline to impute):
+  age                4 ( 0.05%)
+  TSH              724 ( 9.43%)
+  T3             2,209 (28.77%)
+  TT4              354 ( 4.61%)
+  T4U              681 ( 8.87%)
+  FTI              674 ( 8.78%)
+  sex_is_male      254 ( 3.31%)
