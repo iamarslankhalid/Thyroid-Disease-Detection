@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { api, type FeatureMeta } from "../api";
 import { TrendChart, type TrendPoint } from "../components/TrendChart";
 import { CLASS_META, formatDateTime, formatPercent } from "../lib/classes";
 import {
@@ -10,6 +11,16 @@ import {
 
 export function HistoryPage() {
   const [entries, setEntries] = useState<StoredAssessment[]>(() => loadHistory());
+  // The reference range comes from the same source the model was trained
+  // against, so the trend band can never disagree with the result panel.
+  const [tshMeta, setTshMeta] = useState<FeatureMeta | null>(null);
+
+  useEffect(() => {
+    api
+      .referenceData()
+      .then((reference) => setTshMeta(reference.features.TSH ?? null))
+      .catch(() => setTshMeta(null));
+  }, []);
 
   // Oldest first, and only assessments that actually carried a TSH value.
   const tshPoints = useMemo<TrendPoint[]>(
@@ -54,14 +65,14 @@ export function HistoryPage() {
         </button>
       </header>
 
-      {tshPoints.length >= 2 && (
+      {tshPoints.length >= 2 && tshMeta?.reference && (
         <section className="rounded-2xl border border-line bg-surface-1 p-6 shadow-sm">
           <TrendChart
             points={tshPoints}
-            label="TSH"
-            unit="mU/L"
-            referenceLow={0.4}
-            referenceHigh={4.0}
+            label={tshMeta.label}
+            unit={tshMeta.unit}
+            referenceLow={tshMeta.reference[0]}
+            referenceHigh={tshMeta.reference[1]}
           />
         </section>
       )}

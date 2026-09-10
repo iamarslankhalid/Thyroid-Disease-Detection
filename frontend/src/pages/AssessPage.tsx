@@ -26,6 +26,9 @@ export function AssessPage() {
       saveAssessment(patient, response);
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (cause) {
+      // Clear the previous result: leaving it under an error banner would let a
+      // stale screening read as the answer to the values just entered.
+      setResult(null);
       setError((cause as Error).message);
     } finally {
       setSubmitting(false);

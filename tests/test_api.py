@@ -89,6 +89,57 @@ class TestPrediction:
         assert response.status_code == 200
         assert response.json()["inputs_provided"] < response.json()["inputs_total"]
 
+    def test_input_count_measures_values_not_checkboxes(self, client) -> None:
+        """Ticking history boxes must not make a sparse assessment look complete."""
+        sparse = {"age": 44, "sex": "male", "TSH": 3.0}
+        body = client.post("/api/predict", json=sparse).json()
+        assert body["inputs_provided"] == 3
+        assert body["inputs_total"] == 7
+
+        with_history = {**sparse, "goitre": True, "psych": True, "sick": True}
+        assert client.post("/api/predict", json=with_history).json()["inputs_provided"] == 3
+
+        full = client.post("/api/predict", json=HYPOTHYROID_PATIENT).json()
+        assert full["inputs_provided"] == 7
+
+    def test_probabilities_are_labelled_by_the_estimator_class_order(self, client) -> None:
+        """The predicted class must be the one holding the highest probability."""
+        body = client.post("/api/predict", json=HYPOTHYROID_PATIENT).json()
+        highest = max(body["probabilities"], key=lambda name: body["probabilities"][name])
+        assert body["prediction"] == highest
+        assert body["confidence"] == pytest.approx(body["probabilities"][highest])
+
+
+class TestRouting:
+    """The SPA catch-all must not answer for the API.
+
+    Starlette prefers a full path match over a partial one, so without an
+    explicit guard the frontend's catch-all route returns index.html with a 200
+    for any unknown /api path or method mismatch. The client would then parse
+    HTML as JSON and show the patient a syntax error instead of a real status.
+    """
+
+    def test_unknown_api_path_is_404_not_the_spa(self, client) -> None:
+        response = client.get("/api/does-not-exist")
+        assert response.status_code == 404
+        assert response.headers["content-type"].startswith("application/json")
+
+    def test_wrong_method_on_a_real_endpoint_is_not_html(self, client) -> None:
+        response = client.get("/api/predict")
+        assert response.status_code in {404, 405}
+        assert "text/html" not in response.headers["content-type"]
+
+    def test_unknown_app_route_serves_the_spa(self, client) -> None:
+        """Client-side routes still have to survive a page refresh."""
+        response = client.get("/history")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+
+    def test_static_route_cannot_escape_the_static_directory(self, client) -> None:
+        response = client.get("/../../ml/config.py")
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+
 
 class TestValidation:
     def test_rejects_a_request_with_no_lab_results(self, client) -> None:

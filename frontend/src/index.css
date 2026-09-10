@@ -139,6 +139,32 @@ body {
     display: none !important;
   }
 
+  /* Paper is white in every theme. Forcing only body colours would leave a
+     dark-mode reader with white text on white paper, because each element
+     paints itself from --ink-1, so the tokens themselves are reset here. */
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    color-scheme: light;
+
+    --surface-0: #ffffff;
+    --surface-1: #ffffff;
+    --surface-2: #f2f2f0;
+    --border-subtle: #cccccc;
+    --border-strong: #999999;
+
+    --ink-1: #000000;
+    --ink-2: #333333;
+    --ink-3: #595959;
+
+    --series-negative: #2a78d6;
+    --series-hypo: #eb6834;
+    --series-hyper: #1baf7a;
+
+    --accent: #2a78d6;
+    --accent-soft: #e8f0fc;
+  }
+
   body {
     background: #ffffff;
     color: #000000;

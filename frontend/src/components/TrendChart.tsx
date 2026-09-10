@@ -40,9 +40,17 @@ export function TrendChart({ points, label, unit, referenceLow, referenceHigh }:
     const min = Math.max(rawMin - pad, 0);
     const max = rawMax + pad;
 
+    // Points are placed by date, not by position in the array. Spacing readings
+    // evenly would draw a year-long gap the same width as an overnight one, and
+    // the slope is the entire point of a trend chart.
+    const times = points.map((point) => new Date(point.date).getTime());
+    const firstTime = Math.min(...times);
+    const lastTime = Math.max(...times);
+    const timeSpan = lastTime - firstTime;
+
     const x = (index: number) =>
       PADDING.left +
-      (points.length === 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
+      (timeSpan === 0 ? plotWidth / 2 : ((times[index] - firstTime) / timeSpan) * plotWidth);
     const y = (value: number) =>
       PADDING.top + plotHeight - ((value - min) / (max - min)) * plotHeight;
 
@@ -54,7 +62,9 @@ export function TrendChart({ points, label, unit, referenceLow, referenceHigh }:
       plotWidth,
       plotHeight,
       ticks: [min, (min + max) / 2, max],
-      path: points.map((point, index) => `${index === 0 ? "M" : "L"}${x(index)},${y(point.value)}`).join(" "),
+      path: points
+        .map((point, index) => `${index === 0 ? "M" : "L"}${x(index)},${y(point.value)}`)
+        .join(" "),
     };
   }, [points, referenceLow, referenceHigh]);
 
@@ -73,8 +83,7 @@ export function TrendChart({ points, label, unit, referenceLow, referenceHigh }:
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="w-full min-w-[380px]"
-          role="img"
-          aria-label={`${label} across ${points.length} assessments`}
+          aria-label={`${label} over time, ${points.length} readings`}
           onMouseLeave={() => setHovered(null)}
         >
           <defs>
@@ -161,13 +170,21 @@ export function TrendChart({ points, label, unit, referenceLow, referenceHigh }:
                 stroke="var(--surface-1)"
                 strokeWidth={2}
               />
-              {/* Hit target far larger than the mark itself. */}
+              {/* Hit target far larger than the mark itself, and reachable by
+                  keyboard as well as mouse - a tooltip only a mouse can open is
+                  a tooltip that half the readers never see. */}
               <circle
                 cx={chart.x(index)}
                 cy={chart.y(point.value)}
                 r={16}
                 fill="transparent"
+                tabIndex={0}
+                role="button"
+                aria-label={`${new Date(point.date).toLocaleDateString()}: ${point.value} ${unit}`}
+                className="cursor-pointer outline-none focus-visible:stroke-2"
                 onMouseEnter={() => setHovered(index)}
+                onFocus={() => setHovered(index)}
+                onBlur={() => setHovered(null)}
               />
             </g>
           ))}
@@ -210,6 +227,30 @@ export function TrendChart({ points, label, unit, referenceLow, referenceHigh }:
           </div>
         )}
       </div>
+
+      <details className="mt-3">
+        <summary className="cursor-pointer text-xs text-ink-3 hover:text-ink-2">
+          Show these readings as a table
+        </summary>
+        <table className="mt-2 w-full text-left text-xs">
+          <thead className="text-ink-3">
+            <tr>
+              <th scope="col" className="py-1 font-medium">Date</th>
+              <th scope="col" className="py-1 font-medium">{label}</th>
+            </tr>
+          </thead>
+          <tbody className="tabular text-ink-2">
+            {points.map((point) => (
+              <tr key={point.date}>
+                <td className="py-1">{new Date(point.date).toLocaleDateString()}</td>
+                <td className="py-1">
+                  {point.value} {unit}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
     </figure>
   );
 }

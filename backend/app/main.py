@@ -126,14 +126,20 @@ def predict(patient: PatientInput) -> PredictionResponse:
 
 
 # --- static frontend --------------------------------------------------------
-# Mounted last so it never shadows an /api route. Absent during development,
-# when Vite serves the frontend instead.
+# Registered last, but that alone does not protect the API: Starlette prefers a
+# full path match over a partial one, so this catch-all would answer
+# GET /api/predict (a method mismatch) and /api/anything-misspelled with the
+# SPA's HTML and a 200. A client would then try to parse HTML as JSON and show
+# the patient a syntax error instead of a real status, so /api is excluded here
+# explicitly.
 if STATIC_DIR.is_dir():
     app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def serve_frontend(full_path: str) -> FileResponse:
         """Return the requested file, falling back to the SPA entry point."""
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail=f"No API route at /{full_path}.")
         candidate = (STATIC_DIR / full_path).resolve()
         if full_path and candidate.is_file() and candidate.is_relative_to(STATIC_DIR.resolve()):
             return FileResponse(candidate)

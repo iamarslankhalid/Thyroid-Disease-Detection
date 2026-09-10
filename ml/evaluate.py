@@ -1,7 +1,7 @@
 """Metrics that are honest about an imbalanced, safety-critical problem.
 
-Plain accuracy is close to meaningless here: 90.7% of patients in this dataset
-are healthy, so predicting "Negative" for everyone already scores ~0.91. Every
+Plain accuracy is close to meaningless here: 88.2% of patients in this dataset
+are healthy, so predicting "Negative" for everyone already scores ~0.88. Every
 report therefore leads with balanced accuracy, macro F1 and - most importantly -
 per-class recall, because a missed hypothyroid patient is the costly error.
 """

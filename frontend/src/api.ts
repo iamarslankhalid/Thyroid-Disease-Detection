@@ -73,7 +73,8 @@ export interface TestMetrics {
   balanced_accuracy: number;
   macro_f1: number;
   missed_disease_rate: number;
-  roc_auc_ovr_macro: number | null;
+  /** Absent for the baseline, which has no probability estimates. */
+  roc_auc_ovr_macro?: number | null;
   per_class: Record<string, ClassScores>;
   confusion_matrix: number[][];
   confusion_matrix_labels: string[];

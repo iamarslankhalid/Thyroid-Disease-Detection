@@ -16,7 +16,6 @@ export function ResultPanel({
 }) {
   const meta = CLASS_META[result.prediction];
   const tone = TONE_COLOR[meta.tone];
-  const completeness = result.inputs_provided;
 
   return (
     <div className="space-y-6">
@@ -55,8 +54,14 @@ export function ResultPanel({
           <div>
             <dt className="text-xs text-ink-3">Values you provided</dt>
             <dd className="tabular mt-0.5 text-lg font-semibold text-ink-1">
-              {completeness}
+              {result.inputs_provided}
+              <span className="font-normal text-ink-3"> of {result.inputs_total}</span>
             </dd>
+            {result.inputs_provided < result.inputs_total && (
+              <p className="mt-0.5 text-xs text-ink-3">
+                Missing values were estimated, so treat this result with more caution.
+              </p>
+            )}
           </div>
           <div>
             <dt className="text-xs text-ink-3">Model</dt>

@@ -38,7 +38,12 @@ class ModelNotLoadedError(RuntimeError):
 
 
 class ModelService:
-    """Thread-safe holder for the fitted pipeline and its metadata."""
+    """Holds the fitted pipeline and its metadata for the process.
+
+    ``load()`` is guarded so a reload cannot publish a half-swapped pipeline.
+    Prediction is lock-free: it only reads attributes, and the pipeline itself
+    is not mutated by ``predict``.
+    """
 
     def __init__(self, model_path: Path = MODEL_FILE) -> None:
         self.model_path = Path(model_path)
@@ -73,6 +78,12 @@ class ModelService:
         return self._metadata
 
     # --- inference ---------------------------------------------------------
+    # The values a patient reads off a report: age, sex and the five blood
+    # tests. History checkboxes are not counted, because "I ticked three boxes"
+    # is not the same kind of evidence as "I entered three lab results", and
+    # conflating them would let a sparse assessment look complete.
+    MEASURED_INPUTS = ("age", "sex", "TSH", "T3", "TT4", "T4U", "FTI")
+
     def _to_frame(self, payload: dict) -> tuple[pd.DataFrame, set[str]]:
         """Map an API payload onto the exact feature frame the model expects.
 
@@ -118,27 +129,35 @@ class ModelService:
         class_names = self._metadata["class_names"]
 
         probabilities = self._pipeline.predict_proba(frame)[0]
-        predicted_index = int(np.argmax(probabilities))
+        column_index = int(np.argmax(probabilities))
+        # predict_proba's columns follow the estimator's own class order, which
+        # is not guaranteed to match CLASS_NAMES; going through classes_ keeps
+        # the labels attached to the right numbers even if a future training run
+        # sees the classes in a different order.
+        class_order = [class_names[int(label)] for label in self._pipeline.classes_]
+        predicted_index = int(self._pipeline.classes_[column_index])
 
         contributions = explain_prediction(
             self._pipeline,
             frame,
             self._metadata,
-            predicted_index,
+            column_index,
             provided_features=provided,
         )
 
         return {
             "prediction": class_names[predicted_index],
-            "confidence": float(probabilities[predicted_index]),
+            "confidence": float(probabilities[column_index]),
             "probabilities": {
                 name: float(probability)
-                for name, probability in zip(class_names, probabilities)
+                for name, probability in zip(class_order, probabilities)
             },
             "contributions": [item.to_dict() for item in contributions],
             "lab_flags": self._lab_flags(payload),
-            "inputs_provided": len(provided),
-            "inputs_total": len(FEATURE_ORDER),
+            "inputs_provided": sum(
+                payload.get(field) is not None for field in self.MEASURED_INPUTS
+            ),
+            "inputs_total": len(self.MEASURED_INPUTS),
             "model_name": self._metadata["model_name"],
             "model_trained_at": self._metadata["trained_at"],
             "disclaimer": DISCLAIMER,

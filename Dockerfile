@@ -24,6 +24,12 @@ COPY backend/ ./backend/
 COPY data/ ./data/
 COPY models/thyroid_model.joblib ./models/thyroid_model.joblib
 
+# The compiled UI, which the API serves as static files. Without this the
+# image would start and answer /api but hand every visitor a bare JSON notice.
+# vite.config.ts writes the bundle to ../backend/app/static, which resolves to
+# /backend/app/static in the build stage's filesystem.
+COPY --from=frontend /backend/app/static/ ./backend/app/static/
+
 # Run as a non-root user; the container never needs to write to its own files.
 RUN useradd --create-home --uid 1000 appuser && chown -R appuser /app
 USER appuser

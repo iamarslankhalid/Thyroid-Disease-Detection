@@ -26,8 +26,19 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
   const [showHistory, setShowHistory] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const ageMeta = reference.features.age;
+
   const setValue = (field: string, value: string) =>
     setValues((current) => ({ ...current, [field]: value }));
+
+  /** Changing sex clears a pregnancy tick that is no longer applicable, so the
+   *  collapsed section cannot report a selection the patient can no longer see. */
+  function changeSex(next: typeof sex) {
+    setSex(next);
+    if (next !== "female") {
+      setHistory((current) => ({ ...current, pregnant: false }));
+    }
+  }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -72,8 +83,8 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
             <input
               type="number"
               inputMode="numeric"
-              min={1}
-              max={120}
+              min={ageMeta?.min}
+              max={ageMeta?.max}
               value={values.age ?? ""}
               onChange={(event) => setValue("age", event.target.value)}
               placeholder="e.g. 45"
@@ -92,7 +103,7 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
                 <button
                   key={option.label}
                   type="button"
-                  onClick={() => setSex(option.value as typeof sex)}
+                  onClick={() => changeSex(option.value as typeof sex)}
                   className={`rounded-lg border px-3 py-2 text-sm transition ${
                     sex === option.value
                       ? "border-accent bg-accent-soft font-medium text-ink-1"

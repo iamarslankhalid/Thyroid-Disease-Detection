@@ -8,6 +8,7 @@
  */
 
 import type { ClassName, PatientInput, PredictionResponse } from "../api";
+import { CLASS_ORDER } from "./classes";
 
 const STORAGE_KEY = "thyroid-assessments-v1";
 const MAX_ENTRIES = 50;
@@ -23,10 +24,17 @@ export interface StoredAssessment {
 
 function isAssessment(value: unknown): value is StoredAssessment {
   const candidate = value as StoredAssessment;
+  // `prediction` is checked against the real class list, not merely for being a
+  // string: entries written by an older version, or edited by hand, would
+  // otherwise reach CLASS_META[prediction] and crash the whole history page on
+  // an undefined lookup.
   return (
     typeof candidate?.id === "string" &&
     typeof candidate?.createdAt === "string" &&
-    typeof candidate?.prediction === "string"
+    !Number.isNaN(Date.parse(candidate?.createdAt)) &&
+    CLASS_ORDER.includes(candidate?.prediction) &&
+    typeof candidate?.confidence === "number" &&
+    Number.isFinite(candidate.confidence)
   );
 }
 
