@@ -21,13 +21,11 @@ A patient enters whatever their lab report shows — even a single TSH value —
 - **A printable report** and a **local history** with a TSH trend over time
 - **A transparency page** showing the confusion matrix, per-class recall and known limits
 
-| Screening form | Explained result |
-|---|---|
-| ![Screening form](docs/images/screenshot-form.png) | ![Result](docs/images/screenshot-result.png) |
+![The result of a screening: a plain-language verdict, model confidence across the three outcomes, the values that drove it, and each lab value against its reference range](docs/images/screenshot-result.png)
 
-| Model transparency | History and trend |
-|---|---|
-| ![Model page](docs/images/screenshot-model.png) | ![History](docs/images/screenshot-history.png) |
+| Screening form | Model transparency | History, in dark mode |
+|---|---|---|
+| ![The screening form, with lab fields labelled by unit and typical range](docs/images/screenshot-form.png) | ![The model page, showing balanced accuracy, macro F1, missed-disease rate and per-class scores](docs/images/screenshot-model.png) | ![Saved assessments with a TSH trend line drawn against the normal range](docs/images/screenshot-history-dark.png) |
 
 ---
 

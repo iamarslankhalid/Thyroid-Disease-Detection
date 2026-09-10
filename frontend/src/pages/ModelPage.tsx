@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { api, type ModelInfo } from "../api";
 import { formatDateTime, formatPercent } from "../lib/classes";
 
+/** scikit-learn scorer names read badly in a sentence ("f1 macro"). */
+const METRIC_LABELS: Record<string, string> = {
+  f1_macro: "macro F1",
+  balanced_accuracy: "balanced accuracy",
+  accuracy: "accuracy",
+};
+
+const metricLabel = (name: string) => METRIC_LABELS[name] ?? name.replace(/_/g, " ");
+
 function MetricTile({
   label,
   value,
@@ -53,7 +62,7 @@ export function ModelPage() {
         <p className="mt-2 max-w-3xl text-ink-2">
           A {info.model_name.replace(/_/g, " ")} trained on {info.training_rows.toLocaleString()}{" "}
           patient records and measured on {info.test_rows.toLocaleString()} it never saw during
-          training. Selected on {info.selection_metric.replace(/_/g, " ")}, using scikit-learn{" "}
+          training. Selected on {metricLabel(info.selection_metric)}, using scikit-learn{" "}
           {info.sklearn_version}. Last trained {formatDateTime(info.trained_at)}.
         </p>
       </header>

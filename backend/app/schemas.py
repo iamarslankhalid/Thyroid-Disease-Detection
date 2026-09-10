@@ -70,7 +70,7 @@ class PatientInput(BaseModel):
     psych: bool = False
 
     @model_validator(mode="after")
-    def require_one_lab_result(self) -> "PatientInput":
+    def require_one_lab_result(self) -> PatientInput:
         """Refuse to guess from history alone.
 
         The model can impute a missing test, but with no blood test at all the
@@ -85,7 +85,7 @@ class PatientInput(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def pregnancy_requires_female(self) -> "PatientInput":
+    def pregnancy_requires_female(self) -> PatientInput:
         if self.pregnant and self.sex == "male":
             raise ValueError("'pregnant' cannot be set for a male patient.")
         return self

@@ -8,23 +8,31 @@ const STATUS_STYLE: Record<RangeStatus, { color: string; label: string; symbol: 
   high: { color: "var(--status-critical)", label: "Above range", symbol: "▲" },
 };
 
-/** Where a value sits on a strip that spans a little beyond the normal range. */
-function markerPosition(flag: LabFlag): number {
+/**
+ * The strip spans one normal-range width either side of the normal range, and
+ * never below zero - no blood test can read negative, so showing that space
+ * would misrepresent how far below normal a low value really is.
+ */
+function scale(flag: LabFlag): { low: number; high: number } {
   const span = flag.reference_high - flag.reference_low;
-  const low = flag.reference_low - span;
-  const high = flag.reference_high + span;
+  return {
+    low: Math.max(flag.reference_low - span, 0),
+    high: flag.reference_high + span,
+  };
+}
+
+function markerPosition(flag: LabFlag): number {
+  const { low, high } = scale(flag);
   const clamped = Math.min(Math.max(flag.value, low), high);
   return ((clamped - low) / (high - low)) * 100;
 }
 
 function normalZone(flag: LabFlag): { left: number; width: number } {
-  const span = flag.reference_high - flag.reference_low;
-  const low = flag.reference_low - span;
-  const high = flag.reference_high + span;
+  const { low, high } = scale(flag);
   const total = high - low;
   return {
     left: ((flag.reference_low - low) / total) * 100,
-    width: (span / total) * 100,
+    width: ((flag.reference_high - flag.reference_low) / total) * 100,
   };
 }
 

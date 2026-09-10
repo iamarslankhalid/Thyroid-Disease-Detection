@@ -11,11 +11,9 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from ml.config import (
-    BINARY_FEATURES,
     CLASS_NAMES,
     DATA_FILE,
     FEATURE_ORDER,
@@ -180,4 +178,4 @@ def build_dataset(
     return features.reset_index(drop=True), y.reset_index(drop=True), report
 
 
-__all__ = ["build_dataset", "load_raw", "map_target", "DatasetReport", "DROPPED_COLUMNS"]
+__all__ = ["DROPPED_COLUMNS", "DatasetReport", "build_dataset", "load_raw", "map_target"]

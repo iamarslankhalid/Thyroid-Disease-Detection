@@ -101,4 +101,4 @@ def build_baseline() -> Pipeline:
     )
 
 
-__all__ = ["build_preprocessor", "build_candidates", "build_baseline"]
+__all__ = ["build_baseline", "build_candidates", "build_preprocessor"]
