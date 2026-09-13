@@ -1,0 +1,378 @@
+{
+  "baseline_majority_class": {
+    "cv": null,
+    "test": {
+      "accuracy": 0.8815104166666666,
+      "balanced_accuracy": 0.3333333333333333,
+      "macro_f1": 0.31234140715109576,
+      "per_class": {
+        "Negative": {
+          "precision": 0.8815104166666666,
+          "recall": 1.0,
+          "f1": 0.9370242214532872,
+          "support": 1354
+        },
+        "Hypothyroid": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 134
+        },
+        "Hyperthyroid": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 48
+        }
+      },
+      "confusion_matrix": [
+        [
+          1354,
+          0,
+          0
+        ],
+        [
+          134,
+          0,
+          0
+        ],
+        [
+          48,
+          0,
+          0
+        ]
+      ],
+      "confusion_matrix_labels": [
+        "Negative",
+        "Hypothyroid",
+        "Hyperthyroid"
+      ],
+      "missed_disease_rate": 1.0
+    }
+  },
+  "logistic_regression": {
+    "cv": {
+      "balanced_accuracy": {
+        "mean": 0.9607233110221645,
+        "std": 0.005615982691785718
+      },
+      "f1_macro": {
+        "mean": 0.8346465487659243,
+        "std": 0.01701316728110836
+      },
+      "accuracy": {
+        "mean": 0.9461190343039944,
+        "std": 0.008134095902211489
+      }
+    },
+    "test": {
+      "accuracy": 0.9453125,
+      "balanced_accuracy": 0.9502861125196272,
+      "macro_f1": 0.8288935193342466,
+      "per_class": {
+        "Negative": {
+          "precision": 0.99687255668491,
+          "recall": 0.9416543574593796,
+          "f1": 0.9684770224078997,
+          "support": 1354
+        },
+        "Hypothyroid": {
+          "precision": 0.806060606060606,
+          "recall": 0.9925373134328358,
+          "f1": 0.8896321070234113,
+          "support": 134
+        },
+        "Hyperthyroid": {
+          "precision": 0.4782608695652174,
+          "recall": 0.9166666666666666,
+          "f1": 0.6285714285714286,
+          "support": 48
+        }
+      },
+      "confusion_matrix": [
+        [
+          1275,
+          32,
+          47
+        ],
+        [
+          0,
+          133,
+          1
+        ],
+        [
+          4,
+          0,
+          44
+        ]
+      ],
+      "confusion_matrix_labels": [
+        "Negative",
+        "Hypothyroid",
+        "Hyperthyroid"
+      ],
+      "roc_auc_ovr_macro": 0.9848410440221792,
+      "missed_disease_rate": 0.02197802197802198
+    }
+  },
+  "random_forest": {
+    "cv": {
+      "balanced_accuracy": {
+        "mean": 0.9443155241602674,
+        "std": 0.01736918800859183
+      },
+      "f1_macro": {
+        "mean": 0.9383190673831339,
+        "std": 0.010240440815777093
+      },
+      "accuracy": {
+        "mean": 0.9855117770068089,
+        "std": 0.001401935070873031
+      }
+    },
+    "test": {
+      "accuracy": 0.984375,
+      "balanced_accuracy": 0.9516606406666813,
+      "macro_f1": 0.9391242373252031,
+      "per_class": {
+        "Negative": {
+          "precision": 0.9947916666666666,
+          "recall": 0.9874446085672083,
+          "f1": 0.9911045218680504,
+          "support": 1354
+        },
+        "Hypothyroid": {
+          "precision": 0.9300699300699301,
+          "recall": 0.9925373134328358,
+          "f1": 0.9602888086642599,
+          "support": 134
+        },
+        "Hyperthyroid": {
+          "precision": 0.8571428571428571,
+          "recall": 0.875,
+          "f1": 0.865979381443299,
+          "support": 48
+        }
+      },
+      "confusion_matrix": [
+        [
+          1337,
+          10,
+          7
+        ],
+        [
+          1,
+          133,
+          0
+        ],
+        [
+          6,
+          0,
+          42
+        ]
+      ],
+      "confusion_matrix_labels": [
+        "Negative",
+        "Hypothyroid",
+        "Hyperthyroid"
+      ],
+      "roc_auc_ovr_macro": 0.9981831353345915,
+      "missed_disease_rate": 0.038461538461538464
+    }
+  },
+  "hist_gradient_boosting": {
+    "cv": {
+      "balanced_accuracy": {
+        "mean": 0.9636407318644169,
+        "std": 0.010227024960671871
+      },
+      "f1_macro": {
+        "mean": 0.9314970241576681,
+        "std": 0.00409089967600568
+      },
+      "accuracy": {
+        "mean": 0.9820939669178352,
+        "std": 0.001622175852343977
+      }
+    },
+    "test": {
+      "accuracy": 0.9798177083333334,
+      "balanced_accuracy": 0.9543942339018839,
+      "macro_f1": 0.9243572876651217,
+      "per_class": {
+        "Negative": {
+          "precision": 0.9947643979057592,
+          "recall": 0.982274741506647,
+          "f1": 0.9884801189149015,
+          "support": 1354
+        },
+        "Hypothyroid": {
+          "precision": 0.9166666666666666,
+          "recall": 0.9850746268656716,
+          "f1": 0.9496402877697842,
+          "support": 134
+        },
+        "Hyperthyroid": {
+          "precision": 0.7818181818181819,
+          "recall": 0.8958333333333334,
+          "f1": 0.8349514563106796,
+          "support": 48
+        }
+      },
+      "confusion_matrix": [
+        [
+          1330,
+          12,
+          12
+        ],
+        [
+          2,
+          132,
+          0
+        ],
+        [
+          5,
+          0,
+          43
+        ]
+      ],
+      "confusion_matrix_labels": [
+        "Negative",
+        "Hypothyroid",
+        "Hyperthyroid"
+      ],
+      "roc_auc_ovr_macro": 0.9898690014790276,
+      "missed_disease_rate": 0.038461538461538464
+    }
+  },
+  "knn": {
+    "cv": {
+      "balanced_accuracy": {
+        "mean": 0.6533905487198127,
+        "std": 0.01756864563753493
+      },
+      "f1_macro": {
+        "mean": 0.7300870415810208,
+        "std": 0.01147685439083892
+      },
+      "accuracy": {
+        "mean": 0.9283744099569841,
+        "std": 0.002338982400014446
+      }
+    },
+    "test": {
+      "accuracy": 0.9303385416666666,
+      "balanced_accuracy": 0.6849086362868082,
+      "macro_f1": 0.7546577600681349,
+      "per_class": {
+        "Negative": {
+          "precision": 0.9314878892733564,
+          "recall": 0.9940915805022157,
+          "f1": 0.9617720614505181,
+          "support": 1354
+        },
+        "Hypothyroid": {
+          "precision": 0.9433962264150944,
+          "recall": 0.373134328358209,
+          "f1": 0.5347593582887701,
+          "support": 134
+        },
+        "Hyperthyroid": {
+          "precision": 0.868421052631579,
+          "recall": 0.6875,
+          "f1": 0.7674418604651163,
+          "support": 48
+        }
+      },
+      "confusion_matrix": [
+        [
+          1346,
+          3,
+          5
+        ],
+        [
+          84,
+          50,
+          0
+        ],
+        [
+          15,
+          0,
+          33
+        ]
+      ],
+      "confusion_matrix_labels": [
+        "Negative",
+        "Hypothyroid",
+        "Hyperthyroid"
+      ],
+      "roc_auc_ovr_macro": 0.9302557633727959,
+      "missed_disease_rate": 0.5439560439560439
+    }
+  },
+  "svm": {
+    "cv": {
+      "balanced_accuracy": {
+        "mean": 0.9564801075433491,
+        "std": 0.006505649186783836
+      },
+      "f1_macro": {
+        "mean": 0.8650171597400013,
+        "std": 0.014187859089548165
+      },
+      "accuracy": {
+        "mean": 0.9544220427613881,
+        "std": 0.006576415837287309
+      }
+    },
+    "test": {
+      "accuracy": 0.9563802083333334,
+      "balanced_accuracy": 0.9611436294646903,
+      "macro_f1": 0.866167159089206,
+      "per_class": {
+        "Negative": {
+          "precision": 0.9961479198767335,
+          "recall": 0.9549483013293943,
+          "f1": 0.9751131221719457,
+          "support": 1354
+        },
+        "Hypothyroid": {
+          "precision": 0.7975460122699386,
+          "recall": 0.9701492537313433,
+          "f1": 0.8754208754208754,
+          "support": 134
+        },
+        "Hyperthyroid": {
+          "precision": 0.6133333333333333,
+          "recall": 0.9583333333333334,
+          "f1": 0.7479674796747967,
+          "support": 48
+        }
+      },
+      "confusion_matrix": [
+        [
+          1293,
+          32,
+          29
+        ],
+        [
+          4,
+          130,
+          0
+        ],
+        [
+          1,
+          1,
+          46
+        ]
+      ],
+      "confusion_matrix_labels": [
+        "Negative",
+        "Hypothyroid",
+        "Hyperthyroid"
+      ],
+      "roc_auc_ovr_macro": 0.9914764490566733,
+      "missed_disease_rate": 0.027472527472527472
+    }
+  }
+}
