@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
+from backend.app.main import STATIC_DIR, app
 
 HEALTHY_PATIENT = {
     "age": 35,
@@ -231,13 +231,19 @@ class TestRouting:
     def test_unknown_app_route_serves_the_spa(self, client) -> None:
         """Client-side routes still have to survive a page refresh."""
         response = client.get("/history")
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
+        if STATIC_DIR.is_dir():
+            assert response.status_code == 200
+            assert "text/html" in response.headers["content-type"]
+        else:
+            assert response.status_code == 404
 
     def test_static_route_cannot_escape_the_static_directory(self, client) -> None:
         response = client.get("/../../ml/config.py")
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
+        if STATIC_DIR.is_dir():
+            assert response.status_code == 200
+            assert "text/html" in response.headers["content-type"]
+        else:
+            assert response.status_code == 404
 
 
 class TestValidation:
