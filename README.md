@@ -1,8 +1,9 @@
-# Thyroid Disease Detection
+# ThyroLens — Thyroid Disease Detection
 
-A thyroid screening tool that turns a blood-test report into an explained result:
-a machine-learning API, a patient-facing web app, and an honest account of how
-well the model actually performs.
+**Your thyroid blood test, explained.** A patient-facing screening product that
+turns a lab report into an explained result: a machine-learning API, a React web
+app with a proper product front door, and an honest account of how well the
+model actually performs.
 
 [![CI](https://github.com/iamarslankhalid/Thyroid-Disease-Detection/actions/workflows/ci.yml/badge.svg)](https://github.com/iamarslankhalid/Thyroid-Disease-Detection/actions/workflows/ci.yml)
 
@@ -25,6 +26,8 @@ unit their laboratory printed — and gets back:
 - **A transparency page** showing the confusion matrix, per-class recall and known limits
 
 ![The result of a screening: a plain-language verdict, model confidence across the three outcomes, the values that drove it, and each lab value against its reference range](docs/images/screenshot-result.png)
+
+![The ThyroLens landing page: headline, call to action, and an example result card](docs/images/screenshot-landing.png)
 
 | Screening form | What would change the result | Model transparency |
 |---|---|---|
@@ -122,6 +125,17 @@ different transformation than training did. The artifact also carries its own
 feature order, class names, metrics and scikit-learn version, and the API reads
 units and reference ranges from the same `ml/config.py` the model was trained
 from — the UI never hard-codes a clinical value.
+
+### The site
+
+| Route | What it is |
+|---|---|
+| `/` | Landing page — what the product does, how it works, its limits |
+| `/screening` | The tool: the form, the result, the reasoning |
+| `/history` | Saved checks and a TSH trend, stored only in the browser |
+| `/model` | Performance, confusion matrix, excluded columns |
+| `/about` | The dataset, the full FAQ, limitations, how it is built |
+| `/docs` | Interactive API documentation (FastAPI) |
 
 ### Units are a correctness problem, not a convenience
 

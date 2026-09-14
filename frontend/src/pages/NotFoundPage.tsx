@@ -17,16 +17,16 @@ export function NotFoundPage() {
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link
-          to="/"
+          to="/screening"
           className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink hover:opacity-90"
         >
-          Run a screening
+          Check my report
         </Link>
         <Link
-          to="/about"
+          to="/"
           className="rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-ink-2 hover:border-line-strong"
         >
-          About this project
+          Back to the home page
         </Link>
       </div>
     </div>

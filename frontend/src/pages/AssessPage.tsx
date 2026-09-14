@@ -59,10 +59,8 @@ export function AssessPage() {
           Check your thyroid blood test
         </h1>
         <p className="mt-2 max-w-2xl text-ink-2">
-          Enter the values from your lab report, in the units your laboratory used. The
-          model compares them with 7,679 historical patient records, explains which of
-          your numbers drove the result, and shows how close you are to a different
-          answer. It is a screening aid, not a diagnosis.
+          Enter the values from your lab report, in the units your laboratory used. Your
+          age and one blood test are enough to begin.
         </p>
       </header>
 

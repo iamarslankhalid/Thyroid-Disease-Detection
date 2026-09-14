@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { BRAND } from "./lib/content";
 import { AboutPage } from "./pages/AboutPage";
 import { AssessPage } from "./pages/AssessPage";
 import { HistoryPage } from "./pages/HistoryPage";
+import { LandingPage } from "./pages/LandingPage";
 import { ModelPage } from "./pages/ModelPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
@@ -31,27 +33,30 @@ function useTheme(): [Theme, (theme: Theme) => void] {
   return [theme, setTheme];
 }
 
-const NAV = [
-  { to: "/", label: "Screening", end: true, title: "Thyroid Screening" },
-  { to: "/history", label: "History", end: false, title: "Your history" },
-  { to: "/model", label: "The model", end: false, title: "How this model works" },
-  { to: "/about", label: "About", end: false, title: "About this project" },
+/** Every route, with the browser-tab title that belongs to it. */
+const ROUTES = [
+  { to: "/", end: true, title: `${BRAND.name} — ${BRAND.tagline}`, nav: null },
+  { to: "/screening", end: false, title: "Check your report", nav: null },
+  { to: "/history", end: false, title: "Your history", nav: "History" },
+  { to: "/model", end: false, title: "How this model works", nav: "The model" },
+  { to: "/about", end: false, title: "About", nav: "About" },
 ];
+
+const NAV = ROUTES.filter((route) => route.nav !== null);
 
 /** Keeps the browser tab and history entries meaningful per route. */
 function useDocumentTitle() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const match = NAV.find((item) =>
+    const match = ROUTES.find((item) =>
       item.end ? pathname === item.to : pathname.startsWith(item.to),
     );
-    // The home page is the site, so it carries the bare name rather than
-    // "Thyroid Screening · Thyroid Screening".
-    if (match) {
-      document.title =
-        match.to === "/" ? "Thyroid Screening" : `${match.title} · Thyroid Screening`;
+    // The landing page carries the full name and tagline; inner pages are
+    // suffixed with the product name so a tab is identifiable either way.
+    if (!match) {
+      document.title = `Page not found · ${BRAND.name}`;
     } else {
-      document.title = "Page not found · Thyroid Screening";
+      document.title = match.to === "/" ? match.title : `${match.title} · ${BRAND.name}`;
     }
   }, [pathname]);
 }
@@ -86,14 +91,12 @@ export default function App() {
 
       <header className="no-print sticky top-0 z-10 border-b border-line bg-surface-1/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
-          <Link to="/" className="flex items-center gap-2.5 font-semibold text-ink-1">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-ink-1"
+          >
             <Logo />
-            <span>
-              Thyroid Screening
-              <span className="block text-[11px] font-normal text-ink-3">
-                machine-learning decision support
-              </span>
-            </span>
+            {BRAND.name}
           </Link>
 
           <nav aria-label="Main" className="flex gap-1 text-sm">
@@ -110,18 +113,26 @@ export default function App() {
                   }`
                 }
               >
-                {item.label}
+                {item.nav}
               </NavLink>
             ))}
           </nav>
 
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="ml-auto rounded-lg border border-line px-2.5 py-1.5 text-sm text-ink-2 hover:border-line-strong"
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-          >
-            {theme === "dark" ? "☾" : "☀"}
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              to="/screening"
+              className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold whitespace-nowrap text-accent-ink transition hover:opacity-90 sm:px-4"
+            >
+              Check my report
+            </Link>
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="rounded-lg border border-line px-2.5 py-1.5 text-sm text-ink-2 hover:border-line-strong"
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            >
+              {theme === "dark" ? "☾" : "☀"}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -140,7 +151,8 @@ export default function App() {
 
       <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <Routes>
-          <Route path="/" element={<AssessPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/screening" element={<AssessPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/model" element={<ModelPage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -151,7 +163,7 @@ export default function App() {
       <footer className="no-print border-t border-line bg-surface-1">
         <div className="mx-auto grid max-w-5xl gap-6 px-4 py-8 text-sm sm:grid-cols-3 sm:px-6">
           <div>
-            <p className="font-semibold text-ink-1">Thyroid Screening</p>
+            <p className="font-semibold text-ink-1">{BRAND.name}</p>
             <p className="mt-1.5 text-xs leading-relaxed text-ink-3">
               An educational demonstration of explainable machine learning for thyroid
               blood tests. Not a medical device.
@@ -164,7 +176,7 @@ export default function App() {
             <ul className="mt-2 space-y-1.5 text-xs">
               <li>
                 <Link to="/about" className="text-ink-3 hover:text-ink-1">
-                  How it works
+                  About the project
                 </Link>
               </li>
               <li>
