@@ -6,15 +6,19 @@ One process serves both, so the whole system deploys as a single container.
 from __future__ import annotations
 
 import logging
+import sqlite3
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from backend.app import accounts, history
+from backend.app.db import get_db, init_db
 from backend.app.model_service import ModelNotLoadedError, model_service
+from backend.app.security import optional_user
 from backend.app.schemas import (
     HealthResponse,
     ModelInfoResponse,
@@ -36,18 +40,19 @@ DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load the model once at start-up rather than on the first request."""
+    """Load the model and open the database once at start-up."""
+    init_db()
     model_service.load()
     yield
 
 
 app = FastAPI(
-    title="Thyroid Screening API",
+    title="ThyroLens API",
     description=(
-        "Machine-learning screening support for thyroid disorders. "
-        "Educational use only - this is not a medical device."
+        "Explainable machine-learning screening for thyroid blood tests, with "
+        "patient accounts, saved history, analytics and PDF reports."
     ),
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -55,9 +60,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=DEV_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+app.include_router(accounts.router)
+app.include_router(history.router)
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["system"])
@@ -142,12 +150,21 @@ def model_info() -> ModelInfoResponse:
 
 
 @app.post("/api/predict", response_model=PredictionResponse, tags=["screening"])
-def predict(patient: PatientInput) -> PredictionResponse:
-    """Screen one patient and explain the result."""
+def predict(
+    patient: PatientInput,
+    user: sqlite3.Row | None = Depends(optional_user),
+    db: sqlite3.Connection = Depends(get_db),
+) -> PredictionResponse:
+    """Screen one patient and explain the result.
+
+    Signed-in requests are saved to the account; guests' results are not stored.
+    """
     try:
         result = model_service.predict(patient.canonical_payload(), patient.units)
     except ModelNotLoadedError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+    if user is not None:
+        result["assessment_id"] = history.save_assessment(db, user["id"], patient, result)
     return PredictionResponse(**result)
 
 

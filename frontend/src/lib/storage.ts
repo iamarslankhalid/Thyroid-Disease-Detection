@@ -1,10 +1,9 @@
 /**
- * Assessment history, kept in the browser.
+ * Guest history, kept in the browser.
  *
- * Deliberately not sent to a server: these are health details, and storing them
- * locally means the app needs no account, no database and no privacy policy it
- * cannot honour. The trade-off - history does not follow the user to another
- * device - is stated in the UI.
+ * Signed-in users' checks are saved to their account on the server; this
+ * store only holds checks run as a guest, which can be imported into an
+ * account after signing up.
  */
 
 import type { ClassName, PatientInput, PredictionResponse } from "../api";
@@ -119,13 +118,4 @@ export function deleteAssessment(id: string): StoredAssessment[] {
 
 export function clearHistory(): void {
   persist([]);
-}
-
-/** Everything the browser holds, for the "download my data" button. */
-export function exportHistory(): string {
-  return JSON.stringify(
-    { exportedAt: new Date().toISOString(), assessments: loadHistory() },
-    null,
-    2,
-  );
 }

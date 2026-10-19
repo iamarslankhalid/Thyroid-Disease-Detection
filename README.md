@@ -1,14 +1,13 @@
 # ThyroLens — Thyroid Disease Detection
 
 **Your thyroid blood test, explained.** A patient-facing screening product that
-turns a lab report into an explained result: a machine-learning API, a React web
-app with a proper product front door, and an honest account of how well the
-model actually performs.
+turns a lab report into an explained result, keeps a history per account, charts
+how each test is moving and produces a PDF report to take to a doctor.
 
 [![CI](https://github.com/iamarslankhalid/Thyroid-Disease-Detection/actions/workflows/ci.yml/badge.svg)](https://github.com/iamarslankhalid/Thyroid-Disease-Detection/actions/workflows/ci.yml)
 
-> **Educational project — not a medical device.** It does not diagnose anything.
-> Every result carries that warning, and so does this README.
+> **A screening aid, not a diagnosis.** Results come from a statistical model and
+> can be wrong; every result and report says so and points the user to a doctor.
 
 ---
 
@@ -22,18 +21,13 @@ unit their laboratory printed — and gets back:
 - **What would change it**: *"if your TSH were below 4.46 mU/L, this would read Negative"* — a real boundary found by re-running the model across the whole plausible range, not an estimate
 - **Their numbers against reference ranges**, in their own units, so nothing rests on the model's word alone
 - **What to do next**, and a comparison against their previous check
-- **A printable report** and a **local history** with a TSH trend over time
+- **An account** that saves every check, with notes for the doctor on each one
+- **An analytics dashboard**: latest status, each test against its reference range, trends, result mix and monthly activity
+- **PDF reports** of the full history (or a period) or a single check, with reference ranges, high/low flags, trend charts and notes
 - **A transparency page** showing the confusion matrix, per-class recall and known limits
 
-![The result of a screening: a plain-language verdict, model confidence across the three outcomes, the values that drove it, and each lab value against its reference range](docs/images/screenshot-result.png)
-
-![The ThyroLens landing page: headline, call to action, and an example result card](docs/images/screenshot-landing.png)
-
-| Screening form | What would change the result | Model transparency |
-|---|---|---|
-| ![The screening form, with a unit selector beside each lab field](docs/images/screenshot-form.png) | ![Counterfactual thresholds and next steps beneath the result](docs/images/screenshot-explain.png) | ![The model page, showing recall by class and a confusion-matrix heatmap](docs/images/screenshot-model.png) |
-
-![Saved assessments with a TSH trend line drawn against the normal range, in dark mode](docs/images/screenshot-history-dark.png)
+Guests can still run a check without an account; their checks stay in the
+browser and can be imported into an account later.
 
 ---
 
@@ -84,11 +78,15 @@ uvicorn backend.app.main:app --reload
 
 Open <http://127.0.0.1:8000>. The API documentation is at `/docs`.
 
-With Docker, the whole thing is one image:
+Accounts and saved checks live in a SQLite database at `var/thyrolens.db`
+(override with `THYROLENS_DB_PATH`); it is created on first start.
+
+With Docker, the whole thing is one image. Mount a volume at `/app/var` so
+accounts survive container restarts:
 
 ```bash
 docker build -t thyroid-screening .
-docker run -p 8000:8000 thyroid-screening
+docker run -p 8000:8000 -v thyrolens-data:/app/var thyroid-screening
 ```
 
 ### Working on the frontend
@@ -106,15 +104,17 @@ cd frontend && npm run dev                 # terminal 2, http://localhost:5173
 
 ```text
              ┌───────────────────────────┐
-Lab report → │  React + TypeScript UI    │  form → result → explanation
-             │  (Vite, Tailwind)         │  history in localStorage
+Lab report → │  React + TypeScript UI    │  form → result → explanation,
+             │  (Vite, Tailwind)         │  dashboard, history, account
              └─────────────┬─────────────┘
-                           │  POST /api/predict
+                           │  /api/*  (Bearer session token)
              ┌─────────────▼─────────────┐
-             │  FastAPI                  │  Pydantic validates clinical ranges
-             │  backend/app              │  and refuses impossible input
-             └─────────────┬─────────────┘
-             ┌─────────────▼─────────────┐
+             │  FastAPI                  │  Pydantic validates clinical ranges;
+             │  backend/app              │  accounts, history, analytics, PDFs
+             └──────┬──────────────┬─────┘
+                    │              └──────────▶ SQLite (raw SQL): users,
+                    │                           sessions, checks, lab values
+             ┌──────▼────────────────────┐
              │  scikit-learn Pipeline    │  impute → scale → random forest
              │  models/*.joblib          │  + per-patient explanation
              └───────────────────────────┘
@@ -132,7 +132,10 @@ from — the UI never hard-codes a clinical value.
 |---|---|
 | `/` | Landing page — what the product does, how it works, its limits |
 | `/screening` | The tool: the form, the result, the reasoning |
-| `/history` | Saved checks and a TSH trend, stored only in the browser |
+| `/dashboard` | Analytics for the signed-in user |
+| `/history` | Saved checks with notes, filters and PDF downloads |
+| `/account` | Profile, password, data export, report download, account deletion |
+| `/login`, `/register` | Sign in and create an account |
 | `/model` | Performance, confusion matrix, excluded columns |
 | `/about` | The dataset, the full FAQ, limitations, how it is built |
 | `/docs` | Interactive API documentation (FastAPI) |
@@ -154,9 +157,10 @@ reporting lab's own normal mean, so the app says so instead of guessing.
 
 ```text
 ml/            data cleaning, pipeline, training, evaluation, explanation
-backend/app/   FastAPI: schemas, model service, routes; serves the built UI
+backend/app/   FastAPI: schemas, model service, accounts, history, analytics,
+               PDF reports, SQLite access; serves the built UI
 frontend/src/  React app: pages, components, typed API client
-tests/         78 tests over cleaning, imputation, unit conversion and the API
+tests/         tests over cleaning, imputation, unit conversion, the API and accounts
 models/        trained artifact + generated model card
 reports/       metrics.json and the dataset report from the last run
 notebooks/     the original exploratory notebook, kept as history
@@ -215,7 +219,7 @@ compared, now on scaled inputs — KNN's honest macro F1 is 0.755.
 - **The data is from the 1980s**, collected at one Australian clinic. Assay methods and reference ranges have changed; real-world accuracy today would be lower.
 - **Hyperthyroidism is rare here** — 241 cases in the whole dataset — so that class is the least reliable.
 - **Never externally validated** on patients from another hospital, country or era.
-- **No health data leaves the browser.** Assessment history is stored in `localStorage`; there is no account, no database and nothing to leak. The trade-off is that history does not follow you to another device.
+- **Health data is stored per account.** Passwords are hashed with scrypt, session tokens are stored only as SHA-256 digests, every history query is scoped to the signed-in user, and users can export or permanently delete everything. Guests' checks never leave their browser.
 - Modern lab reports usually give free T4 and free T3, while this dataset uses the older T4-uptake and free-T4-index measures. Missing inputs are imputed, and a result from fewer values deserves less weight.
 
 ---

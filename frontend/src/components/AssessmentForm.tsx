@@ -6,39 +6,6 @@ type LabField = (typeof LAB_FIELDS)[number];
 
 type Sex = "female" | "male" | "unspecified";
 
-interface Example {
-  name: string;
-  description: string;
-  age: string;
-  sex: Sex;
-  values: Partial<Record<LabField, string>>;
-}
-
-/** Three panels a visitor can try without owning a lab report. */
-const EXAMPLES: Example[] = [
-  {
-    name: "Underactive",
-    description: "High TSH with low T4 - the textbook hypothyroid picture.",
-    age: "58",
-    sex: "female",
-    values: { TSH: "18.4", T3: "1.1", TT4: "52", T4U: "0.99", FTI: "53" },
-  },
-  {
-    name: "Overactive",
-    description: "Suppressed TSH with raised hormone levels.",
-    age: "41",
-    sex: "female",
-    values: { TSH: "0.02", T3: "4.9", TT4: "198", T4U: "1.08", FTI: "185" },
-  },
-  {
-    name: "Healthy",
-    description: "Everything within the usual adult range.",
-    age: "35",
-    sex: "female",
-    values: { TSH: "2.1", T3: "1.9", TT4: "105", T4U: "0.98", FTI: "110" },
-  },
-];
-
 /** What a lab report may call each test, for people matching fields to paper. */
 const ALSO_KNOWN_AS: Record<LabField, string> = {
   TSH: "Thyrotropin, Thyroid Stimulating Hormone",
@@ -84,14 +51,6 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
     if (next !== "female") {
       setHistory((current) => ({ ...current, pregnant: false }));
     }
-  }
-
-  function applyExample(example: Example) {
-    setValues({ age: example.age, ...example.values });
-    setUnits({});
-    setSex(example.sex);
-    setHistory({});
-    setErrors({});
   }
 
   function validate(): Record<string, string> {
@@ -158,18 +117,17 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
   }
 
   const historyCount = Object.values(history).filter(Boolean).length;
-  const fieldClass = (field: string) =>
-    `w-full rounded-lg border bg-surface-1 px-3 py-2 text-ink-1 outline-none tabular focus:ring-2 focus:ring-accent/20 ${
-      errors[field] ? "border-critical focus:border-critical" : "border-line focus:border-accent"
-    }`;
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-8">
       <section>
-        <h2 className="text-sm font-semibold tracking-wide text-ink-1 uppercase">About you</h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-ink-1">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-xs font-bold text-accent">1</span>
+          About you
+        </h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor={`${formId}-age`} className="text-sm text-ink-2">
+            <label htmlFor={`${formId}-age`} className="label">
               Age
             </label>
             <input
@@ -183,18 +141,18 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
               placeholder="e.g. 45"
               aria-invalid={Boolean(errors.age)}
               aria-describedby={errors.age ? `${formId}-age-error` : undefined}
-              className={`mt-1 ${fieldClass("age")}`}
+              className="input tabular"
             />
             {errors.age && (
-              <p id={`${formId}-age-error`} className="mt-1 text-xs text-critical">
+              <p id={`${formId}-age-error`} className="mt-1.5 text-xs text-serious">
                 {errors.age}
               </p>
             )}
           </div>
 
           <fieldset>
-            <legend className="text-sm text-ink-2">Sex</legend>
-            <div className="mt-1 flex flex-wrap gap-2">
+            <legend className="label">Sex</legend>
+            <div className="flex flex-wrap gap-2">
               {(
                 [
                   { value: "female", label: "Female" },
@@ -207,10 +165,10 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
                   type="button"
                   aria-pressed={sex === option.value}
                   onClick={() => changeSex(option.value)}
-                  className={`rounded-lg border px-3 py-2 text-sm transition ${
+                  className={`rounded-[0.625rem] border px-3.5 py-[0.5625rem] text-sm transition ${
                     sex === option.value
-                      ? "border-accent bg-accent-soft font-medium text-ink-1"
-                      : "border-line bg-surface-1 text-ink-2 hover:border-line-strong"
+                      ? "border-accent bg-accent-soft font-semibold text-accent"
+                      : "border-line-strong bg-surface-1 text-ink-2 hover:bg-surface-2"
                   }`}
                 >
                   {option.label}
@@ -223,7 +181,8 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
 
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-sm font-semibold tracking-wide text-ink-1 uppercase">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-ink-1">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-xs font-bold text-accent">2</span>
             Blood test results
           </h2>
           <button
@@ -241,7 +200,7 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
         </p>
 
         {showHelp && (
-          <div className="mt-3 rounded-lg border border-line bg-surface-2 p-4 text-xs leading-relaxed text-ink-2">
+          <div className="mt-3 rounded-xl border border-line bg-surface-2 p-4 text-xs leading-relaxed text-ink-2">
             <p>
               Laboratories name these tests differently. Match yours by the alternative
               names below, and check the unit printed beside your number - most reports
@@ -265,7 +224,7 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
           </div>
         )}
 
-        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid gap-x-4 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
           {LAB_FIELDS.map((field) => {
             const meta = reference.features[field];
             if (!meta) return null;
@@ -273,10 +232,10 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
             const choices = meta.units ?? [];
             return (
               <div key={field}>
-                <label htmlFor={`${formId}-${field}`} className="text-sm text-ink-2">
+                <label htmlFor={`${formId}-${field}`} className="label">
                   {meta.label}
                 </label>
-                <div className="mt-1 flex gap-2">
+                <div className="flex gap-2">
                   <input
                     id={`${formId}-${field}`}
                     type="number"
@@ -286,7 +245,7 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
                     onChange={(event) => setValue(field, event.target.value)}
                     aria-invalid={Boolean(errors[field])}
                     aria-describedby={`${formId}-${field}-hint`}
-                    className={`${fieldClass(field)} min-w-0 flex-1`}
+                    className="input tabular min-w-0 flex-1"
                   />
                   {choices.length > 1 ? (
                     <select
@@ -295,7 +254,7 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
                         setUnits((current) => ({ ...current, [field]: event.target.value }))
                       }
                       aria-label={`Unit for ${meta.label}`}
-                      className="rounded-lg border border-line bg-surface-1 px-2 py-2 text-sm text-ink-2 outline-none focus:border-accent"
+                      className="input w-auto px-2 text-sm text-ink-2"
                     >
                       {choices.map((choice) => (
                         <option key={choice.code} value={choice.code}>
@@ -304,14 +263,14 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
                       ))}
                     </select>
                   ) : (
-                    <span className="flex items-center px-1 text-xs text-ink-3">
+                    <span className="flex min-w-14 items-center justify-center rounded-[0.625rem] bg-surface-2 px-2 text-xs text-ink-3">
                       {choices[0]?.label ?? meta.unit}
                     </span>
                   )}
                 </div>
-                <p id={`${formId}-${field}-hint`} className="mt-1 text-[11px] text-ink-3">
+                <p id={`${formId}-${field}-hint`} className="mt-1.5 text-xs text-ink-3">
                   {errors[field] ? (
-                    <span className="text-critical">{errors[field]}</span>
+                    <span className="text-serious">{errors[field]}</span>
                   ) : option?.reference ? (
                     `typical ${option.reference[0]}–${option.reference[1]} ${option.label}`
                   ) : (
@@ -329,10 +288,11 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
           type="button"
           onClick={() => setShowHistory((open) => !open)}
           aria-expanded={showHistory}
-          className="flex w-full items-center justify-between rounded-lg border border-line bg-surface-1 px-4 py-3 text-left hover:border-line-strong"
+          className="flex w-full items-center justify-between rounded-xl border border-line bg-surface-2 px-4 py-3.5 text-left transition hover:border-line-strong"
         >
-          <span>
-            <span className="text-sm font-semibold tracking-wide text-ink-1 uppercase">
+          <span className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-xs font-bold text-accent">3</span>
+            <span className="text-base font-semibold text-ink-1">
               Medical history
             </span>
             <span className="ml-2 text-xs text-ink-3">
@@ -351,7 +311,7 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
               .map((item) => (
                 <label
                   key={item.feature}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-surface-1 px-3 py-2.5 text-sm text-ink-2 hover:border-line-strong"
+                  className="flex cursor-pointer items-center gap-3 rounded-[0.625rem] border border-line bg-surface-1 px-3 py-2.5 text-sm text-ink-2 transition hover:border-line-strong has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-ink-1"
                 >
                   <input
                     type="checkbox"
@@ -374,33 +334,17 @@ export function AssessmentForm({ reference, onSubmit, isSubmitting }: Props) {
       {errors.form && (
         <p
           role="alert"
-          className="rounded-lg border border-critical px-4 py-3 text-sm text-critical"
+          className="rounded-xl border border-serious/30 bg-serious-soft px-4 py-3 text-sm text-serious"
         >
           {errors.form}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-lg bg-accent px-5 py-3 font-semibold text-accent-ink transition hover:opacity-90 disabled:opacity-60"
-        >
-          {isSubmitting ? "Analysing…" : "Check my results"}
-        </button>
-        <span className="text-xs text-ink-3">or try an example:</span>
-        {EXAMPLES.map((example) => (
-          <button
-            key={example.name}
-            type="button"
-            onClick={() => applyExample(example)}
-            title={example.description}
-            className="rounded-full border border-line px-3 py-1.5 text-xs text-ink-2 transition hover:border-accent hover:text-ink-1"
-          >
-            {example.name}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-wrap items-center gap-3 border-t border-line pt-6">
+        <button type="submit" disabled={isSubmitting} className="btn btn-primary btn-lg">
+          {isSubmitting && <span className="spinner" aria-hidden />}
+          {isSubmitting ? "Analysing…" : "Analyse my results"}
+        </button>      </div>
     </form>
   );
 }

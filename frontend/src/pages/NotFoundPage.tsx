@@ -1,32 +1,20 @@
 import { Link } from "react-router-dom";
 
-/**
- * A real 404 rather than silently showing the screening form.
- *
- * A mistyped URL that quietly renders the home page makes a site feel broken in
- * a way people cannot name; saying what happened is kinder and takes one screen.
- */
+/** A real 404 rather than silently showing another page. */
 export function NotFoundPage() {
   return (
-    <div className="mx-auto max-w-md py-12 text-center">
-      <p className="text-sm font-medium tracking-wide text-ink-3 uppercase">Error 404</p>
-      <h1 className="mt-2 text-2xl font-semibold text-ink-1">This page does not exist</h1>
+    <div className="mx-auto max-w-md py-16 text-center">
+      <p className="font-display text-6xl font-extrabold text-accent">404</p>
+      <h1 className="mt-4 text-2xl font-bold text-ink-1">This page does not exist</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-2">
-        The link may be out of date, or the address mistyped. Nothing is wrong with your
-        saved assessments.
+        The link may be out of date, or the address mistyped. Your saved checks are safe.
       </p>
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link
-          to="/screening"
-          className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink hover:opacity-90"
-        >
-          Check my report
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link to="/screening" className="btn btn-primary">
+          Check my results
         </Link>
-        <Link
-          to="/"
-          className="rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-ink-2 hover:border-line-strong"
-        >
-          Back to the home page
+        <Link to="/" className="btn btn-secondary">
+          Back to home
         </Link>
       </div>
     </div>

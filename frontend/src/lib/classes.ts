@@ -1,6 +1,13 @@
 /** Presentation metadata for the three screening outcomes. */
 
-import type { ClassName } from "../api";
+import type { ClassName, RangeStatus } from "../api";
+
+/** Badge styling for a lab value against its reference range. */
+export const STATUS_STYLE: Record<RangeStatus, { label: string; className: string; symbol: string }> = {
+  low: { label: "Below range", className: "bg-warning-soft text-warning", symbol: "▼" },
+  normal: { label: "In range", className: "bg-good-soft text-good", symbol: "●" },
+  high: { label: "Above range", className: "bg-serious-soft text-serious", symbol: "▲" },
+};
 
 export interface ClassMeta {
   /** CSS custom property holding this class's categorical hue. */
@@ -34,12 +41,6 @@ export const CLASS_META: Record<ClassName, ClassMeta> = {
       "Your results resemble those of people with hyperthyroidism, where the thyroid produces too much hormone. Please take these results to a doctor for proper testing.",
     tone: "serious",
   },
-};
-
-export const TONE_COLOR: Record<ClassMeta["tone"], string> = {
-  good: "var(--status-good)",
-  warning: "var(--status-warning)",
-  serious: "var(--status-serious)",
 };
 
 export const CLASS_ORDER: ClassName[] = ["Negative", "Hypothyroid", "Hyperthyroid"];
