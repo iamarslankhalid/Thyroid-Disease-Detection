@@ -6,9 +6,11 @@ patient, and the API rejects it rather than feeding nonsense to the model.
 
 from __future__ import annotations
 
+import re
+from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ml.config import FEATURE_META
 from ml.units import UnknownUnitError, resolve, round_for_display, to_canonical
@@ -200,6 +202,10 @@ class PredictionResponse(BaseModel):
     model_name: str
     model_trained_at: str
     disclaimer: str
+    assessment_id: int | None = Field(
+        default=None,
+        description="Set when the request was signed in and the result was saved to the account.",
+    )
 
 
 class ModelInfoResponse(BaseModel):
@@ -222,3 +228,204 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     model_loaded: bool
     model_name: str | None = None
+
+
+# --- accounts ----------------------------------------------------------------
+_EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _normalise_email(value: str) -> str:
+    value = value.strip().lower()
+    if len(value) > 254 or not _EMAIL_PATTERN.match(value):
+        raise ValueError("Enter a valid email address.")
+    return value
+
+
+def _check_password_strength(value: str) -> str:
+    if len(value) < 8:
+        raise ValueError("Password must be at least 8 characters.")
+    if not (re.search(r"[A-Za-z]", value) and re.search(r"\d", value)):
+        raise ValueError("Password must contain at least one letter and one number.")
+    return value
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(..., max_length=254)
+    password: str = Field(..., max_length=128)
+    full_name: str = Field(..., min_length=1, max_length=120)
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value: str) -> str:
+        return _normalise_email(value)
+
+    @field_validator("password")
+    @classmethod
+    def strong_password(cls, value: str) -> str:
+        return _check_password_strength(value)
+
+    @field_validator("full_name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Please enter your name.")
+        return value
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., max_length=254)
+    password: str = Field(..., min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def lower_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    date_of_birth: date | None
+    sex: Literal["male", "female"] | None
+    created_at: datetime
+
+
+class AuthResponse(BaseModel):
+    token: str
+    expires_at: datetime
+    user: UserOut
+
+
+class ProfileUpdate(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=120)
+    date_of_birth: date | None = None
+    sex: Literal["male", "female"] | None = None
+
+    @field_validator("full_name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Please enter your name.")
+        return value
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def plausible_birth_date(cls, value: date | None) -> date | None:
+        if value is not None and not date(1900, 1, 1) <= value <= date.today():
+            raise ValueError("Enter a date of birth between 1900 and today.")
+        return value
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=128)
+    new_password: str = Field(..., max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def strong_password(cls, value: str) -> str:
+        return _check_password_strength(value)
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+# --- saved assessments -------------------------------------------------------
+class StoredLabOut(BaseModel):
+    feature: str
+    label: str
+    value: float
+    unit: str
+    status: Literal["low", "normal", "high"]
+    reference_low: float
+    reference_high: float
+
+
+class AssessmentSummary(BaseModel):
+    id: int
+    created_at: datetime
+    prediction: Literal["Negative", "Hypothyroid", "Hyperthyroid"]
+    confidence: float
+    probabilities: dict[str, float]
+    inputs_provided: int
+    labs: list[StoredLabOut]
+    note: str | None
+
+
+class AssessmentDetail(AssessmentSummary):
+    input: dict
+    result: PredictionResponse
+
+
+class NoteUpdate(BaseModel):
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class ImportItem(BaseModel):
+    created_at: datetime
+    input: PatientInput
+
+
+class ImportRequest(BaseModel):
+    """Screenings a guest ran in this browser, re-scored on the server.
+
+    Only inputs are accepted: results are recomputed rather than trusted, so a
+    record in the account is always something this server actually produced.
+    """
+
+    items: list[ImportItem] = Field(..., max_length=100)
+
+
+class ImportResponse(BaseModel):
+    imported: int
+
+
+# --- analytics ---------------------------------------------------------------
+class TrendPointOut(BaseModel):
+    date: datetime
+    value: float
+    status: Literal["low", "normal", "high"]
+
+
+class LabAnalytics(BaseModel):
+    feature: str
+    label: str
+    unit: str
+    reference_low: float
+    reference_high: float
+    readings: int
+    out_of_range: int
+    latest_value: float
+    latest_status: Literal["low", "normal", "high"]
+    latest_at: datetime
+    previous_value: float | None
+    change: float | None
+    minimum: float
+    maximum: float
+    average: float
+    series: list[TrendPointOut]
+
+
+class MonthlyCount(BaseModel):
+    month: str
+    total: int
+    Negative: int
+    Hypothyroid: int
+    Hyperthyroid: int
+
+
+class AnalyticsResponse(BaseModel):
+    total: int
+    first_at: datetime | None
+    last_at: datetime | None
+    days_since_last: int | None
+    average_confidence: float | None
+    class_counts: dict[str, int]
+    latest: AssessmentSummary | None
+    previous_prediction: Literal["Negative", "Hypothyroid", "Hyperthyroid"] | None
+    abnormal_assessments: int
+    monthly: list[MonthlyCount]
+    labs: list[LabAnalytics]

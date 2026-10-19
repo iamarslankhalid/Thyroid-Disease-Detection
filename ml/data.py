@@ -39,18 +39,6 @@ DROPPED_COLUMNS = {
     "hypopituitary": "only 2 positive cases in 9,172 rows",
 }
 
-# The *_measured flags simply restate whether the matching value is present.
-# The pipeline adds explicit missing-indicator columns, so keeping these would
-# duplicate the same information.
-MEASURED_COLUMNS = [
-    "TSH_measured",
-    "T3_measured",
-    "TT4_measured",
-    "T4U_measured",
-    "FTI_measured",
-    "TBG_measured",
-]
-
 
 @dataclass
 class DatasetReport:

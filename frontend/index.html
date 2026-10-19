@@ -4,9 +4,31 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Thyroid Screening</title>
-    <meta name="theme-color" content="#2a78d6" />
-    <meta name="description" content="Machine-learning screening support for thyroid disorders, with explained results. Educational project, not a medical device." />
+    <title>ThyroLens — Understand your thyroid blood test</title>
+    <meta name="theme-color" content="#2563eb" />
+    <meta
+      name="description"
+      content="ThyroLens turns your thyroid blood test into a clear, explained screening result. Track your TSH, T3 and T4 over time and download a PDF report for your doctor."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Apply the saved theme before first paint, so dark mode never flashes white.
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var dark =
+            saved === "dark" ||
+            ((!saved || saved === "system") &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

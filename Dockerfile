@@ -30,8 +30,13 @@ COPY models/thyroid_model.joblib ./models/thyroid_model.joblib
 # /backend/app/static in the build stage's filesystem.
 COPY --from=frontend /backend/app/static/ ./backend/app/static/
 
-# Run as a non-root user; the container never needs to write to its own files.
-RUN useradd --create-home --uid 1000 appuser && chown -R appuser /app
+# Accounts and saved screenings live in SQLite under /app/var. Mount a
+# persistent volume there, or the database resets whenever the container does.
+ENV THYROLENS_DB_PATH=/app/var/thyrolens.db
+VOLUME ["/app/var"]
+
+# Run as a non-root user; the only directory it writes to is /app/var.
+RUN useradd --create-home --uid 1000 appuser && mkdir -p /app/var && chown -R appuser /app
 USER appuser
 
 EXPOSE 8000

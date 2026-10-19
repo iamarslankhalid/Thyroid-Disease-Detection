@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, type ModelInfo } from "../api";
 import { ConfusionHeatmap, RecallChart } from "../components/ModelCharts";
-import { formatDateTime, formatPercent } from "../lib/classes";
+import { Alert, Icon, LoadingCard, PageHeader, StatCard } from "../components/ui";
+import { formatDate, formatPercent } from "../lib/classes";
 
 /** scikit-learn scorer names read badly in a sentence ("f1 macro"). */
 const METRIC_LABELS: Record<string, string> = {
@@ -11,30 +12,9 @@ const METRIC_LABELS: Record<string, string> = {
 };
 
 const metricLabel = (name: string) => METRIC_LABELS[name] ?? name.replace(/_/g, " ");
+const modelLabel = (name: string) => name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-function MetricTile({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <div className="rounded-xl border border-line bg-surface-1 p-4">
-      <p className="text-xs text-ink-3">{label}</p>
-      <p className="tabular mt-1 text-2xl font-semibold text-ink-1">{value}</p>
-      <p className="mt-1 text-xs leading-relaxed text-ink-3">{hint}</p>
-    </div>
-  );
-}
-
-/**
- * The transparency page: what the model is, how well it does, and where it
- * fails. A screening tool that will not show its confusion matrix is asking for
- * trust it has not earned.
- */
+/** How the model performs, and where it falls short. */
 export function ModelPage() {
   const [info, setInfo] = useState<ModelInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,93 +23,105 @@ export function ModelPage() {
     api.modelInfo().then(setInfo).catch((cause: Error) => setError(cause.message));
   }, []);
 
+  const header = (
+    <PageHeader
+      eyebrow="Our model"
+      title="How the model works"
+      description={
+        info
+          ? `A ${modelLabel(info.model_name).toLowerCase()} trained on ${info.training_rows.toLocaleString()} patient records and evaluated on ${info.test_rows.toLocaleString()} it never saw during training. Selected on ${metricLabel(info.selection_metric)}; last trained ${formatDate(info.trained_at)}.`
+          : "Performance measured on patients the model never saw during training."
+      }
+    />
+  );
+
   if (error) {
     return (
-      <p role="alert" className="text-sm" style={{ color: "var(--status-critical)" }}>
-        {error}
-      </p>
+      <div className="space-y-6">
+        {header}
+        <Alert tone="error">{error}</Alert>
+      </div>
     );
   }
-  if (!info) return <p className="text-sm text-ink-3">Loading…</p>;
+  if (!info) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <LoadingCard lines={5} />
+      </div>
+    );
+  }
 
   const test = info.metrics.test;
   const totalRows = Object.values(info.class_counts).reduce((sum, count) => sum + count, 0);
   const majorityShare = Math.max(...Object.values(info.class_counts)) / totalRows;
 
   return (
-    <div className="space-y-10">
-      <header>
-        <h1 className="text-2xl font-semibold text-ink-1 sm:text-3xl">How this model works</h1>
-        <p className="mt-2 max-w-3xl text-ink-2">
-          A {info.model_name.replace(/_/g, " ")} trained on {info.training_rows.toLocaleString()}{" "}
-          patient records and measured on {info.test_rows.toLocaleString()} it never saw during
-          training. Selected on {metricLabel(info.selection_metric)}, using scikit-learn{" "}
-          {info.sklearn_version}. Last trained {formatDateTime(info.trained_at)}.
-        </p>
-      </header>
+    <div className="space-y-8">
+      {header}
 
-      <section>
-        <h2 className="text-lg font-semibold text-ink-1">Performance</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricTile
-            label="Balanced accuracy"
-            value={formatPercent(test.balanced_accuracy)}
-            hint="Average of how well each of the three classes is caught."
-          />
-          <MetricTile
-            label="Macro F1"
-            value={test.macro_f1.toFixed(3)}
-            hint="Balances missed patients against false alarms, weighting rare classes equally."
-          />
-          <MetricTile
-            label="Missed disease rate"
-            value={formatPercent(test.missed_disease_rate)}
-            hint="Share of genuinely ill patients the model called healthy - the costly error."
-          />
-          <MetricTile
-            label="Plain accuracy"
-            value={formatPercent(test.accuracy)}
-            hint={`Least useful number here: guessing "Negative" every time already scores ${formatPercent(
-              majorityShare,
-              0,
-            )}.`}
-          />
-        </div>
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Balanced accuracy"
+          icon="checkCircle"
+          tone="good"
+          value={formatPercent(test.balanced_accuracy)}
+          hint="Average of how well each class is detected."
+        />
+        <StatCard
+          label="Macro F1"
+          icon="chart"
+          value={test.macro_f1.toFixed(3)}
+          hint="Balances missed cases against false alarms."
+        />
+        <StatCard
+          label="Missed disease rate"
+          icon="alert"
+          tone="warning"
+          value={formatPercent(test.missed_disease_rate)}
+          hint="Patients with a disorder the model called negative."
+        />
+        <StatCard
+          label="Accuracy"
+          icon="beaker"
+          value={formatPercent(test.accuracy)}
+          hint={`For reference, always guessing "Negative" scores ${formatPercent(majorityShare, 0)}.`}
+        />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="min-w-0 rounded-2xl border border-line bg-surface-1 p-6">
+        <div className="card min-w-0 p-6">
           <RecallChart metrics={test} />
         </div>
-        <div className="min-w-0 rounded-2xl border border-line bg-surface-1 p-6">
+        <div className="card min-w-0 p-6">
           <ConfusionHeatmap metrics={test} />
         </div>
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-ink-1">Per class, in numbers</h2>
+        <h2 className="text-lg font-semibold text-ink-1">Per-class performance</h2>
         <p className="mt-1 text-sm text-ink-2">
           Recall is the share of real cases found. Precision is how often a flag is correct.
         </p>
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface-1">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line text-xs tracking-wide text-ink-3 uppercase">
+        <div className="card mt-4 overflow-x-auto">
+          <table className="table-base tabular">
+            <thead>
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Class</th>
-                <th scope="col" className="px-4 py-3 font-medium">Precision</th>
-                <th scope="col" className="px-4 py-3 font-medium">Recall</th>
-                <th scope="col" className="px-4 py-3 font-medium">F1</th>
-                <th scope="col" className="px-4 py-3 font-medium">Test cases</th>
+                <th scope="col">Class</th>
+                <th scope="col">Precision</th>
+                <th scope="col">Recall</th>
+                <th scope="col">F1</th>
+                <th scope="col">Test cases</th>
               </tr>
             </thead>
-            <tbody className="tabular">
+            <tbody>
               {Object.entries(test.per_class).map(([name, scores]) => (
-                <tr key={name} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3 text-ink-1">{name}</td>
-                  <td className="px-4 py-3 text-ink-2">{scores.precision.toFixed(3)}</td>
-                  <td className="px-4 py-3 text-ink-2">{scores.recall.toFixed(3)}</td>
-                  <td className="px-4 py-3 text-ink-2">{scores.f1.toFixed(3)}</td>
-                  <td className="px-4 py-3 text-ink-2">{scores.support}</td>
+                <tr key={name}>
+                  <td className="font-medium text-ink-1">{name}</td>
+                  <td>{scores.precision.toFixed(3)}</td>
+                  <td>{scores.recall.toFixed(3)}</td>
+                  <td>{scores.f1.toFixed(3)}</td>
+                  <td>{scores.support}</td>
                 </tr>
               ))}
             </tbody>
@@ -138,41 +130,31 @@ export function ModelPage() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-ink-1">Models that were compared</h2>
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface-1">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line text-xs tracking-wide text-ink-3 uppercase">
+        <h2 className="text-lg font-semibold text-ink-1">Models compared</h2>
+        <div className="card mt-4 overflow-x-auto">
+          <table className="table-base tabular">
+            <thead>
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Model</th>
-                <th scope="col" className="px-4 py-3 font-medium">Macro F1</th>
-                <th scope="col" className="px-4 py-3 font-medium">Balanced acc.</th>
-                <th scope="col" className="px-4 py-3 font-medium">Accuracy</th>
-                <th scope="col" className="px-4 py-3 font-medium">Missed disease</th>
+                <th scope="col">Model</th>
+                <th scope="col">Macro F1</th>
+                <th scope="col">Balanced acc.</th>
+                <th scope="col">Accuracy</th>
+                <th scope="col">Missed disease</th>
               </tr>
             </thead>
-            <tbody className="tabular">
+            <tbody>
               {Object.entries(info.all_model_metrics).map(([name, entry]) => (
-                <tr
-                  key={name}
-                  className="border-b border-line last:border-0"
-                  style={
-                    name === info.model_name ? { backgroundColor: "var(--accent-soft)" } : undefined
-                  }
-                >
-                  <td className="px-4 py-3 text-ink-1">
-                    {name.replace(/_/g, " ")}
+                <tr key={name} className={name === info.model_name ? "[&>td]:bg-accent-soft" : ""}>
+                  <td className="font-medium text-ink-1">
+                    {modelLabel(name)}
                     {name === info.model_name && (
-                      <span className="ml-2 text-[11px] font-medium text-accent">selected</span>
+                      <span className="badge ml-2 bg-accent text-accent-ink">Selected</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-ink-2">{entry.test.macro_f1.toFixed(3)}</td>
-                  <td className="px-4 py-3 text-ink-2">
-                    {entry.test.balanced_accuracy.toFixed(3)}
-                  </td>
-                  <td className="px-4 py-3 text-ink-2">{entry.test.accuracy.toFixed(3)}</td>
-                  <td className="px-4 py-3 text-ink-2">
-                    {formatPercent(entry.test.missed_disease_rate)}
-                  </td>
+                  <td>{entry.test.macro_f1.toFixed(3)}</td>
+                  <td>{entry.test.balanced_accuracy.toFixed(3)}</td>
+                  <td>{entry.test.accuracy.toFixed(3)}</td>
+                  <td>{formatPercent(entry.test.missed_disease_rate)}</td>
                 </tr>
               ))}
             </tbody>
@@ -180,28 +162,29 @@ export function ModelPage() {
         </div>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold text-ink-1">Limits you should know about</h2>
-        <ul className="mt-3 space-y-2 text-sm leading-relaxed text-ink-2">
+      <section className="card p-6 sm:p-8">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning-soft text-warning">
+            <Icon name="info" className="h-5 w-5" />
+          </span>
+          <h2 className="text-lg font-semibold text-ink-1">Things to keep in mind</h2>
+        </div>
+        <ul className="mt-4 space-y-3 text-sm leading-relaxed text-ink-2">
           <li>
-            <strong className="text-ink-1">The data is old.</strong> It comes from one
-            Australian clinic in the 1980s. Assays and reference ranges have changed since,
-            so real-world accuracy today would be lower than the numbers above.
+            <strong className="text-ink-1">One source dataset.</strong> The model learned from a
+            single clinical dataset. Laboratories, assays and reference ranges vary, so accuracy on
+            your results may differ from the figures above.
           </li>
           <li>
-            <strong className="text-ink-1">Rare classes are shakier.</strong> Only{" "}
-            {info.class_counts.Hyperthyroid?.toLocaleString()} hyperthyroid cases exist in
-            the whole dataset, so that class is the least reliable.
+            <strong className="text-ink-1">Hyperthyroidism is less certain.</strong> Only{" "}
+            {info.class_counts.Hyperthyroid?.toLocaleString()} hyperthyroid cases were available,
+            making it the least reliable of the three results.
           </li>
           <li>
-            <strong className="text-ink-1">Never externally validated.</strong> The model has
-            not been tested on patients from any other hospital, country or era.
-          </li>
-          <li>
-            <strong className="text-ink-1">Some columns were deliberately excluded.</strong>{" "}
+            <strong className="text-ink-1">Some columns are excluded on purpose.</strong>
             {Object.entries(info.dropped_columns).map(([name, reason]) => (
               <span key={name} className="mt-1 block text-ink-3">
-                <code className="text-ink-2">{name}</code> — {reason}
+                <code className="rounded bg-surface-2 px-1.5 py-0.5 text-xs text-ink-2">{name}</code> — {reason}
               </span>
             ))}
           </li>

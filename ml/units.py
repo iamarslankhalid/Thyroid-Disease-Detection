@@ -34,11 +34,6 @@ class Unit:
     to_canonical: float
     note: str | None = None
 
-    @property
-    def is_canonical(self) -> bool:
-        return self.to_canonical == 1.0
-
-
 # The first entry for each feature is canonical: the unit the model was trained
 # on, and the one every stored and predicted value is expressed in.
 UNITS: dict[str, tuple[Unit, ...]] = {

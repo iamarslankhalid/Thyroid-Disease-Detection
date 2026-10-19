@@ -1,12 +1,18 @@
-import type { PredictionResponse } from "../api";
+import type { ClassName, PredictionResponse } from "../api";
 import { CLASS_META, formatDate } from "../lib/classes";
-import type { StoredAssessment } from "../lib/storage";
 
 const TRACKED = ["TSH", "T3", "TT4", "T4U", "FTI"] as const;
 
+/** The parts of an earlier check needed to compare against, local or saved. */
+export interface PreviousCheck {
+  createdAt: string;
+  prediction: ClassName;
+  labs: { feature: string; value: number; unit: string }[];
+}
+
 interface Props {
   result: PredictionResponse;
-  previous: StoredAssessment;
+  previous: PreviousCheck;
 }
 
 /**

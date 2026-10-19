@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+.ruff_cache/
 .ipynb_checkpoints/
 
 # Node
@@ -18,6 +19,9 @@ desktop.ini
 Thumbs.db
 .vscode/
 .idea/
+
+# Local database (accounts and saved screenings)
+var/
 
 # Local artifacts
 *.log

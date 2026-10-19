@@ -39,9 +39,9 @@ from ml.units import (
 logger = logging.getLogger(__name__)
 
 DISCLAIMER = (
-    "This is an educational screening aid, not a medical diagnosis. It was "
-    "trained on a historical dataset and can be wrong. Always discuss your "
-    "results with a qualified doctor before making any health decision."
+    "This result is a screening aid produced by a statistical model, not a "
+    "medical diagnosis, and it can be wrong. Always review your results with a "
+    "qualified doctor before making any health decision."
 )
 
 
