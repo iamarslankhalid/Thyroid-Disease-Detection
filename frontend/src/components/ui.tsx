@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 /** Outline icons (24px grid, 1.6 stroke), referenced by name. */
 const ICON_PATHS = {
@@ -67,14 +67,25 @@ export function Icon({ name, className = "h-5 w-5" }: { name: IconName; classNam
 }
 
 export function Logo({ className = "h-8 w-8" }: { className?: string }) {
+  const uid = useId().replace(/:/g, "");
+  const fill = `tl-fill-${uid}`;
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden focusable="false">
-      <rect width="32" height="32" rx="9" fill="var(--accent)" />
+      <defs>
+        <linearGradient id={fill} x1="4" y1="3" x2="28" y2="29" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="var(--accent)" />
+          <stop offset="100%" stopColor="var(--accent-2)" />
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="9" fill={`url(#${fill})`} />
       <g fill="#ffffff">
-        <path d="M15 10.5c0-1.1-.9-1.5-1.8-1.1C9.8 10.9 7.5 14 7.5 17.6c0 3 2 5 4.6 5 1.7 0 2.9-1.1 2.9-2.7Z" opacity="0.95" />
-        <path d="M17 10.5c0-1.1.9-1.5 1.8-1.1 3.4 1.5 5.7 4.6 5.7 8.2 0 3-2 5-4.6 5-1.7 0-2.9-1.1-2.9-2.7Z" opacity="0.75" />
-        <rect x="14.6" y="14" width="2.8" height="4.5" rx="1.4" />
+        <ellipse cx="11" cy="18.4" rx="5.5" ry="8.1" transform="rotate(-16 11 18.4)" />
+        <ellipse cx="21" cy="18.4" rx="5.5" ry="8.1" transform="rotate(16 21 18.4)" />
+        <rect x="12.2" y="15.8" width="7.6" height="4.6" rx="2.3" />
+        <path d="M16 7.2c1 2 1.35 3.7 1.35 5H14.65c0-1.3.35-3 1.35-5Z" />
       </g>
+      <circle cx="16" cy="18.1" r="2.35" fill="#ffffff" />
+      <circle cx="16" cy="18.1" r="1.2" fill={`url(#${fill})`} />
     </svg>
   );
 }

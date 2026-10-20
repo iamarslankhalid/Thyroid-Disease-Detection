@@ -281,36 +281,36 @@ function ReportShowcase() {
         </div>
         <div className="group relative mx-auto w-full max-w-sm [perspective:1200px]" aria-hidden>
           <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-xl border border-line bg-surface-2 transition duration-700 group-hover:translate-x-6 group-hover:translate-y-6" />
-          <div className="relative rounded-xl border border-line bg-white p-6 text-slate-900 shadow-[var(--shadow-lg)] transition duration-700 [transform:rotateY(-8deg)_rotateX(4deg)] group-hover:[transform:none]">
-            <div className="-mx-6 -mt-6 mb-5 h-1.5 rounded-t-xl bg-gradient-to-r from-blue-600 via-violet-600 to-cyan-500" />
+          <div className="relative rounded-xl border border-line bg-surface-1 p-6 text-ink-1 shadow-[var(--shadow-lg)] transition duration-700 [transform:rotateY(-8deg)_rotateX(4deg)] group-hover:[transform:none]">
+            <div className="-mx-6 -mt-6 mb-5 h-1.5 rounded-t-xl bg-gradient-to-r from-accent via-accent-3 to-accent-2" />
             <p className="text-sm font-bold">{BRAND.name} · Thyroid screening history</p>
-            <p className="mt-0.5 text-[10px] text-slate-500">Prepared for review with a doctor</p>
-            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 rounded-md bg-slate-50 p-2.5 text-[9px]">
+            <p className="mt-0.5 text-[10px] text-ink-3">Prepared for review with a doctor</p>
+            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 rounded-md bg-surface-2 p-2.5 text-[9px]">
               {["Patient", "Screenings", "Date of birth", "Period"].map((label, index) => (
                 <span key={label} className="flex items-center gap-1.5">
                   <b>{label}</b>
-                  <span className="h-1.5 rounded-full bg-slate-200" style={{ width: `${[56, 18, 40, 48][index]}%` }} />
+                  <span className="h-1.5 rounded-full bg-surface-3" style={{ width: `${[56, 18, 40, 48][index]}%` }} />
                 </span>
               ))}
             </div>
             <table className="mt-4 w-full text-[9px]">
-              <thead className="bg-slate-50 text-slate-500">
+              <thead className="bg-surface-2 text-ink-3">
                 <tr><th className="p-1 text-left">Test</th><th className="p-1 text-left">Result</th><th className="p-1 text-left">Range</th><th className="p-1 text-left">Status</th></tr>
               </thead>
               <tbody>
                 {["TSH", "Total T3", "Total T4"].map((test) => (
-                  <tr key={test} className="border-b border-slate-100">
+                  <tr key={test} className="border-b border-line">
                     <td className="p-1">{test}</td>
-                    <td className="p-1"><span className="block h-1.5 w-10 rounded-full bg-slate-300" /></td>
-                    <td className="p-1"><span className="block h-1.5 w-8 rounded-full bg-slate-200" /></td>
-                    <td className="p-1"><span className="block h-1.5 w-7 rounded-full bg-emerald-200" /></td>
+                    <td className="p-1"><span className="block h-1.5 w-10 rounded-full bg-surface-3" /></td>
+                    <td className="p-1"><span className="block h-1.5 w-8 rounded-full bg-surface-2" /></td>
+                    <td className="p-1"><span className="block h-1.5 w-7 rounded-full bg-good-soft" /></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="mt-4 h-12 overflow-hidden rounded-md bg-emerald-50">
+            <div className="mt-4 h-12 overflow-hidden rounded-md bg-good-soft">
               <svg viewBox="0 0 200 48" className="h-full w-full">
-                <path d="M6,34 C40,30 60,24 90,18 S150,10 194,26" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" />
+                <path d="M6,34 C40,30 60,24 90,18 S150,10 194,26" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </div>
           </div>
@@ -348,12 +348,12 @@ function FinalCall() {
   return (
     <Reveal
       as="section"
-      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 px-6 py-14 text-center sm:px-12"
+      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent to-accent-2 px-6 py-14 text-center sm:px-12"
     >
       <div className="pointer-events-none absolute inset-0 opacity-15 [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
       <div className="aurora !inset-0 !h-full !opacity-40" aria-hidden>
-        <span className="-top-10 -left-10 h-64 w-64 bg-cyan-400" />
-        <span className="-right-10 -bottom-16 h-72 w-72 bg-fuchsia-500 [animation-delay:-6s]" />
+        <span className="-top-10 -left-10 h-64 w-64 bg-accent-3" />
+        <span className="-right-10 -bottom-16 h-72 w-72 bg-accent-2 [animation-delay:-6s]" />
       </div>
       <div className="relative">
         <h2 className="text-3xl font-bold text-balance text-white">
@@ -364,7 +364,7 @@ function FinalCall() {
           your doctor.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link to="/register" className="btn btn-lg bg-white text-blue-700 hover:bg-blue-50">
+          <Link to="/register" className="btn btn-lg bg-white text-accent hover:bg-surface-1">
             Create free account
           </Link>
           <Link to="/screening" className="btn btn-lg border-white/40 text-white hover:bg-white/10">

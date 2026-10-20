@@ -3,9 +3,11 @@
 /*
  * Design tokens.
  *
- * A calm clinical palette: near-white surfaces, slate ink and a single blue
- * accent, with a matching dark theme. Every colour is defined once here and
- * exposed to Tailwind by role, so components never hard-code a hex value.
+ * A warm clinical palette built around the thyroid: teal (the colour of thyroid
+ * awareness) as the primary accent, coral and honey as warm secondaries, and
+ * cream surfaces instead of clinical white. The dark theme keeps the same hues
+ * on warm charcoal. Every colour is defined once here and exposed to
+ * Tailwind by role, so components never hard-code a hex value.
  *
  * Series hues (one per screening class) and status hues (good / warning /
  * serious) are separate sets and are always paired with an icon or a text
@@ -17,80 +19,80 @@
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  --surface-0: #f6f8fb;
-  --surface-1: #ffffff;
-  --surface-2: #f1f4f9;
-  --surface-3: #e6ebf2;
-  --border-subtle: #e3e8ef;
-  --border-strong: #cbd3df;
+  --surface-0: #faf6ef;
+  --surface-1: #fffaf4;
+  --surface-2: #f3ebe1;
+  --surface-3: #e8ddd0;
+  --border-subtle: #eadfd2;
+  --border-strong: #d4c4b2;
 
-  --ink-1: #0b1324;
-  --ink-2: #475569;
-  --ink-3: #64748b;
+  --ink-1: #241c16;
+  --ink-2: #5c4f45;
+  --ink-3: #8a7b6e;
 
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-2: #7c3aed;
-  --accent-3: #06b6d4;
+  --accent: #178a7e;
+  --accent-hover: #126e64;
+  --accent-2: #e07a5f;
+  --accent-3: #c9923a;
   --accent-ink: #ffffff;
-  --accent-soft: #eef3ff;
-  --accent-ring: rgba(37, 99, 235, 0.22);
-  --glass: rgba(255, 255, 255, 0.72);
-  --aurora-opacity: 0.5;
+  --accent-soft: #e4f4f1;
+  --accent-ring: rgba(23, 138, 126, 0.24);
+  --glass: rgba(255, 250, 244, 0.76);
+  --aurora-opacity: 0.48;
 
-  --series-negative: #0284c7;
-  --series-hypo: #d97706;
-  --series-hyper: #db2777;
+  --series-negative: #178a7e;
+  --series-hypo: #c9923a;
+  --series-hyper: #d45d6a;
 
-  --status-good: #059669;
-  --status-good-soft: #ecfdf5;
-  --status-warning: #d97706;
-  --status-warning-soft: #fffbeb;
-  --status-serious: #dc2626;
-  --status-serious-soft: #fef2f2;
-  --status-critical: #dc2626;
+  --status-good: #2a8a62;
+  --status-good-soft: #e8f5ee;
+  --status-warning: #c27a16;
+  --status-warning-soft: #fdf4e4;
+  --status-serious: #c44b3c;
+  --status-serious-soft: #fbe9e6;
+  --status-critical: #c44b3c;
 
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 6px 20px -6px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0 24px 48px -16px rgba(15, 23, 42, 0.18);
+  --shadow-xs: 0 1px 2px rgba(72, 48, 24, 0.05);
+  --shadow-sm: 0 1px 3px rgba(72, 48, 24, 0.07), 0 1px 2px rgba(72, 48, 24, 0.04);
+  --shadow-md: 0 6px 20px -6px rgba(72, 48, 24, 0.14), 0 2px 6px rgba(72, 48, 24, 0.05);
+  --shadow-lg: 0 24px 48px -16px rgba(72, 48, 24, 0.2);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --surface-0: #0a0f1a;
-  --surface-1: #111827;
-  --surface-2: #172033;
-  --surface-3: #222d42;
-  --border-subtle: #1f2a3c;
-  --border-strong: #334155;
+  --surface-0: #161210;
+  --surface-1: #1e1916;
+  --surface-2: #2a231e;
+  --surface-3: #3a312a;
+  --border-subtle: #3a312a;
+  --border-strong: #56483e;
 
-  --ink-1: #f1f5f9;
-  --ink-2: #a7b3c6;
-  --ink-3: #8592a8;
+  --ink-1: #f6efe6;
+  --ink-2: #c4b6a8;
+  --ink-3: #9a8b7c;
 
-  --accent: #4f8cff;
-  --accent-hover: #75a5ff;
-  --accent-2: #8b5cf6;
-  --accent-3: #22d3ee;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(79, 140, 255, 0.13);
-  --accent-ring: rgba(79, 140, 255, 0.35);
-  --glass: rgba(17, 24, 39, 0.68);
+  --accent: #3eb8aa;
+  --accent-hover: #6fd0c4;
+  --accent-2: #f08a70;
+  --accent-3: #e0b25a;
+  --accent-ink: #12201e;
+  --accent-soft: rgba(62, 184, 170, 0.14);
+  --accent-ring: rgba(62, 184, 170, 0.35);
+  --glass: rgba(30, 25, 22, 0.72);
   --aurora-opacity: 0.32;
 
-  --series-negative: #38bdf8;
-  --series-hypo: #fbbf24;
-  --series-hyper: #f472b6;
+  --series-negative: #4fc9bc;
+  --series-hypo: #e0b25a;
+  --series-hyper: #f07a8c;
 
-  --status-good: #34d399;
-  --status-good-soft: rgba(52, 211, 153, 0.12);
-  --status-warning: #fbbf24;
-  --status-warning-soft: rgba(251, 191, 36, 0.12);
-  --status-serious: #f87171;
-  --status-serious-soft: rgba(248, 113, 113, 0.12);
-  --status-critical: #f87171;
+  --status-good: #4dcc8f;
+  --status-good-soft: rgba(77, 204, 143, 0.13);
+  --status-warning: #e0b25a;
+  --status-warning-soft: rgba(224, 178, 90, 0.13);
+  --status-serious: #f08070;
+  --status-serious-soft: rgba(240, 128, 112, 0.13);
+  --status-critical: #f08070;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -846,11 +848,11 @@ h3 {
     --ink-1: #000000;
     --ink-2: #333333;
     --ink-3: #555555;
-    --series-negative: #0284c7;
-    --series-hypo: #d97706;
-    --series-hyper: #db2777;
-    --accent: #2563eb;
-    --accent-soft: #eef3ff;
+    --series-negative: #178a7e;
+    --series-hypo: #c9923a;
+    --series-hyper: #d45d6a;
+    --accent: #178a7e;
+    --accent-soft: #e4f4f1;
   }
 
   body {

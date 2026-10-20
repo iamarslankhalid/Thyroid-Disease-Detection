@@ -163,7 +163,6 @@ frontend/src/  React app: pages, components, typed API client
 tests/         tests over cleaning, imputation, unit conversion, the API and accounts
 models/        trained artifact + generated model card
 reports/       metrics.json and the dataset report from the last run
-notebooks/     the original exploratory notebook, kept as history
 ```
 
 ---

@@ -40,20 +40,20 @@ from ml.config import BINARY_LABELS
 BRAND = "ThyroLens"
 LAB_ORDER = ("TSH", "T3", "TT4", "T4U", "FTI")
 
-INK = colors.HexColor("#0F172A")
-MUTED = colors.HexColor("#64748B")
-LINE = colors.HexColor("#E2E8F0")
-SOFT = colors.HexColor("#F8FAFC")
-PRIMARY = colors.HexColor("#2563EB")
+INK = colors.HexColor("#241C16")
+MUTED = colors.HexColor("#6E6258")
+LINE = colors.HexColor("#EADFD2")
+SOFT = colors.HexColor("#FAF6EF")
+PRIMARY = colors.HexColor("#178A7E")
 CLASS_COLOURS = {
-    "Negative": colors.HexColor("#047857"),
-    "Hypothyroid": colors.HexColor("#B45309"),
-    "Hyperthyroid": colors.HexColor("#B91C1C"),
+    "Negative": colors.HexColor("#2A8A62"),
+    "Hypothyroid": colors.HexColor("#C27A16"),
+    "Hyperthyroid": colors.HexColor("#C44B3C"),
 }
 STATUS_COLOURS = {
-    "low": colors.HexColor("#B45309"),
-    "high": colors.HexColor("#B91C1C"),
-    "normal": colors.HexColor("#047857"),
+    "low": colors.HexColor("#C27A16"),
+    "high": colors.HexColor("#C44B3C"),
+    "normal": colors.HexColor("#2A8A62"),
 }
 STATUS_TEXT = {"low": "Low", "high": "High", "normal": "Normal"}
 CLASS_TEXT = {
@@ -255,19 +255,19 @@ def _trend_chart(lab) -> Drawing | None:
     band_top = plot.y + (min(lab.reference_high, plot.yValueAxis.valueMax) - plot.yValueAxis.valueMin) / span * plot.height
     drawing.add(
         Rect(plot.x, band_bottom, plot.width, max(band_top - band_bottom, 0.5),
-             fillColor=colors.HexColor("#DCFCE7"), strokeColor=None)
+             fillColor=colors.HexColor("#E8F5EE"), strokeColor=None)
     )
     drawing.add(plot)
     legend = f"Reference range {_number(lab.reference_low)}-{_number(lab.reference_high)} {lab.unit}"
     legend_x = plot.x + plot.width
     drawing.add(
         String(legend_x, height - 5, legend, fontName="Helvetica", fontSize=6.5,
-               fillColor=colors.HexColor("#047857"), textAnchor="end")
+               fillColor=colors.HexColor("#2A8A62"), textAnchor="end")
     )
     legend_width = stringWidth(legend, "Helvetica", 6.5)
     drawing.add(
         Rect(legend_x - legend_width - 9, height - 5.5, 6, 6,
-             fillColor=colors.HexColor("#DCFCE7"), strokeColor=colors.HexColor("#86EFAC"), strokeWidth=0.5)
+             fillColor=colors.HexColor("#E8F5EE"), strokeColor=colors.HexColor("#7BC9A3"), strokeWidth=0.5)
     )
     return drawing
 

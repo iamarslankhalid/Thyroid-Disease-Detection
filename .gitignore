@@ -12,6 +12,8 @@ venv/
 node_modules/
 frontend/dist/
 backend/app/static/
+*.local
+npm-debug.log*
 
 # OS / editor
 desktop.ini
