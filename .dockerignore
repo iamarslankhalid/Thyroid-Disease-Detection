@@ -1,0 +1,23 @@
+# Keep the image build to source the running service actually copies.
+# Training data, tests, and local environments stay in the repo; they are
+# not part of the Render container.
+
+.git
+.github
+.venv
+venv
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.ruff_cache
+.ipynb_checkpoints
+frontend/node_modules
+frontend/dist
+backend/app/static
+var
+tests
+reports
+data
+*.md
+pytest.ini
+requirements-dev.txt

@@ -21,7 +21,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ml/ ./ml/
 COPY backend/ ./backend/
-COPY data/ ./data/
 COPY models/thyroid_model.joblib ./models/thyroid_model.joblib
 
 # The compiled UI, which the API serves as static files. Without this the
