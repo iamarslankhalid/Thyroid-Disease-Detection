@@ -1,0 +1,12 @@
+# Blueprint for a free Render Web Service.
+# Accept it when you connect this repo in the Render dashboard, or create the
+# service by hand with Runtime: Docker, plan Free, port 8000.
+services:
+  - type: web
+    name: thyrolens
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: THYROLENS_DB_PATH
+        value: /app/var/thyrolens.db

@@ -40,7 +40,7 @@ RUN useradd --create-home --uid 1000 appuser && mkdir -p /app/var && chown -R ap
 USER appuser
 
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+    CMD python -c "import os, urllib.request; p=os.environ.get('PORT','8000'); urllib.request.urlopen(f'http://127.0.0.1:{p}/api/health')"
 
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "backend.app.start"]

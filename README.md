@@ -78,6 +78,31 @@ uvicorn backend.app.main:app --reload
 
 Open <http://127.0.0.1:8000>. The API documentation is at `/docs`.
 
+---
+
+## Live demo
+
+The public demo is a free [Render](https://render.com) Web Service built from
+the [Dockerfile](Dockerfile) and [render.yaml](render.yaml) in this repo. After
+you connect the GitHub repository in the Render dashboard, the URL looks like
+`https://thyrolens.onrender.com`. Add that address here once the first deploy
+succeeds.
+
+On the free plan:
+
+- The instance **sleeps after about 15 minutes** with no visitors. The next
+  request takes around a minute to wake it.
+- There is **no persistent disk**, so accounts and saved checks are wiped when
+  the instance sleeps or redeploys. That is acceptable for a portfolio demo,
+  not for real patient records.
+- The instance has **512 MB of RAM**. If it dies while loading the model, the
+  next step is Render's cheapest paid instance, not a static host.
+
+To deploy it yourself: **New → Web Service → this repo**. Accept the blueprint,
+or set Runtime to Docker, the plan to Free, the port to 8000, and the health
+check to `/api/health`. Confirm `/api/health` returns
+`{"status":"ok","model_loaded":true}` before sharing the link.
+
 Accounts and saved checks live in a SQLite database at `var/thyrolens.db`
 (override with `THYROLENS_DB_PATH`); it is created on first start.
 
