@@ -83,10 +83,9 @@ Open <http://127.0.0.1:8000>. The API documentation is at `/docs`.
 ## Live demo
 
 The public demo is a free [Render](https://render.com) Web Service built from
-the [Dockerfile](Dockerfile) and [render.yaml](render.yaml) in this repo. After
-you connect the GitHub repository in the Render dashboard, the URL looks like
-`https://thyrolens.onrender.com`. Add that address here once the first deploy
-succeeds.
+the [Dockerfile](Dockerfile) and [render.yaml](render.yaml) in this repo:
+
+**https://thyrolens.onrender.com**
 
 On the free plan:
 
